@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  pocketbase:
+    image: adrianmusante/pocketbase:latest # Or a specific version like pocketbase/pocketbase:0.22.18
+    container_name: pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090" # Map host port 8090 to container port 8090
+    volumes:
+      - ./pb_data:/pb/pb_data # Persist data in a local directory
+      - ./pb_public:/pb/pb_public # Serve static files
+      - ./pb_migrations:/pb/pb_migrations # Store migration files
+      - ./pb_hooks:/pb/pb_hooks # Store custom hook files
+    environment:
+      # Optional: Set an encryption key for sensitive data in PocketBase's settings
+      # POCKETBASE_ENCRYPTION_KEY: "YOUR_SUPER_SECRET_ENCRYPTION_KEY"
+      # Optional: Set initial admin user credentials (for first startup)
+      POCKETBASE_ADMIN_EMAIL: "hatbuiinho@gmail.com"
+      POCKETBASE_ADMIN_PASSWORD: "tonkinhPhat1A@"
