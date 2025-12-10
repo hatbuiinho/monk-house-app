@@ -9,10 +9,15 @@ import { DataTableRowActions } from './data-table-row-actions'
 
 type TaskCardProps = {
   row: Row<Task>
+  selectMode?: boolean
   onSelectChange?: (selected: boolean) => void
 }
 
-export function TaskCard({ row, onSelectChange }: TaskCardProps) {
+export function TaskCard({
+  row,
+  selectMode = false,
+  onSelectChange,
+}: TaskCardProps) {
   const task = row.original
   const label = labels.find((label) => label.value === task.label)
   const status = statuses.find((status) => status.value === task.status)
@@ -34,15 +39,17 @@ export function TaskCard({ row, onSelectChange }: TaskCardProps) {
       <CardHeader className='pb-3'>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-2'>
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => {
-                row.toggleSelected(!!value)
-                onSelectChange?.(!!value)
-              }}
-              aria-label='Select task'
-              className='translate-y-[2px]'
-            />
+            {selectMode && (
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => {
+                  row.toggleSelected(!!value)
+                  onSelectChange?.(!!value)
+                }}
+                aria-label='Select task'
+                className='translate-y-[2px]'
+              />
+            )}
             <div className='text-muted-foreground text-sm'>#{task.id}</div>
           </div>
           <DataTableRowActions row={row} />

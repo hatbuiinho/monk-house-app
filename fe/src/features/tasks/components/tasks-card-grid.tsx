@@ -28,6 +28,7 @@ type DataTableProps = {
 
 export function TasksCardGrid({ data }: DataTableProps) {
   // Local UI-only states
+  const [selectMode, setSelectMode] = useState(false)
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -106,6 +107,8 @@ export function TasksCardGrid({ data }: DataTableProps) {
       <DataTableToolbar
         table={table}
         searchPlaceholder='Filter by title or ID...'
+        selectMode={selectMode}
+        onSelectModeChange={setSelectMode}
         filters={[
           {
             columnId: 'status',
@@ -125,7 +128,9 @@ export function TasksCardGrid({ data }: DataTableProps) {
           {table.getRowModel().rows?.length ? (
             table
               .getRowModel()
-              .rows.map((row) => <TaskCard key={row.id} row={row} />)
+              .rows.map((row) => (
+                <TaskCard key={row.id} row={row} selectMode={selectMode} />
+              ))
           ) : (
             <div className='text-muted-foreground col-span-full flex h-32 items-center justify-center'>
               No results.

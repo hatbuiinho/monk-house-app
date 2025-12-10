@@ -9,6 +9,8 @@ type DataTableToolbarProps<TData> = {
   table: Table<TData>
   searchPlaceholder?: string
   searchKey?: string
+  selectMode?: boolean
+  onSelectModeChange?: (selectMode: boolean) => void
   filters?: {
     columnId: string
     title: string
@@ -24,6 +26,8 @@ export function DataTableToolbar<TData>({
   table,
   searchPlaceholder = 'Filter...',
   searchKey,
+  selectMode = false,
+  onSelectModeChange,
   filters = [],
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
@@ -80,6 +84,16 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <DataTableViewOptions table={table} />
+      {onSelectModeChange && (
+        <Button
+          variant={selectMode ? 'default' : 'outline'}
+          size='sm'
+          onClick={() => onSelectModeChange(!selectMode)}
+          className='ml-2'
+        >
+          {selectMode ? 'Exit Select Mode' : 'Select Mode'}
+        </Button>
+      )}
     </div>
   )
 }
