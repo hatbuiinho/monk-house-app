@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Trash2 } from 'lucide-react'
@@ -29,21 +30,28 @@ export function DataTableRowActions<TData>({
   const task = taskSchema.parse(row.original)
 
   const { setOpen, setCurrentRow } = useTasks()
+  const [openMenu, setOpenMenu] = useState(false)
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu open={openMenu} modal={false} onOpenChange={setOpenMenu}>
       <DropdownMenuTrigger asChild>
         <Button
           variant='ghost'
           className='data-[state=open]:bg-muted flex h-8 w-8 p-0'
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpenMenu(openMenu)
+          }}
         >
           <DotsHorizontalIcon className='h-4 w-4' />
           <span className='sr-only'>Open menu</span>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align='end' className='w-[160px]'>
         <DropdownMenuItem
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             setCurrentRow(task)
             setOpen('update')
           }}
@@ -67,7 +75,8 @@ export function DataTableRowActions<TData>({
         </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             setCurrentRow(task)
             setOpen('delete')
           }}

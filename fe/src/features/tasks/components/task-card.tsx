@@ -33,10 +33,12 @@ export function TaskCard({
         if (selectMode) {
           row.toggleSelected()
           onSelectChange?.(!row.getIsSelected())
+        } else {
+          onTaskClick?.(task)
         }
       }}
       className={cn(
-        'transition-all duration-200 hover:shadow-md',
+        'cursor-pointer transition-all duration-200 hover:shadow-md',
         row.getIsSelected() && 'ring-primary ring-2 ring-offset-2'
       )}
     >
@@ -62,14 +64,7 @@ export function TaskCard({
       </CardHeader>
 
       <CardContent className='space-y-3 pt-0'>
-        <div
-          onClick={() => {
-            if (!selectMode) {
-              onTaskClick?.(task)
-            }
-          }}
-          className='cursor-pointer space-y-2'
-        >
+        <div className='cursor-pointer space-y-2'>
           <div className='flex items-center space-x-2'>
             {label && <Badge variant='outline'>{label.label}</Badge>}
           </div>
