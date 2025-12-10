@@ -18,6 +18,7 @@ import { priorities, statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { TaskCard } from './task-card'
+import { TaskDetailDialog } from './task-detail-dialog'
 import { tasksColumns as columns } from './tasks-columns'
 
 const route = getRouteApi('/_authenticated/tasks/')
@@ -29,6 +30,8 @@ type DataTableProps = {
 export function TasksCardGrid({ data }: DataTableProps) {
   // Local UI-only states
   const [selectMode, setSelectMode] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -126,11 +129,17 @@ export function TasksCardGrid({ data }: DataTableProps) {
         {/* Card Grid Layout */}
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
           {table.getRowModel().rows?.length ? (
-            table
-              .getRowModel()
-              .rows.map((row) => (
-                <TaskCard key={row.id} row={row} selectMode={selectMode} />
-              ))
+            table.getRowModel().rows.map((row) => (
+              <TaskCard
+                key={row.id}
+                row={row}
+                selectMode={selectMode}
+                onTaskClick={(task) => {
+                  setSelectedTask(task)
+                  setIsDetailSheetOpen(true)
+                }}
+              />
+            ))
           ) : (
             <div className='text-muted-foreground col-span-full flex h-32 items-center justify-center'>
               No results.
@@ -140,6 +149,11 @@ export function TasksCardGrid({ data }: DataTableProps) {
       </div>
       <DataTablePagination table={table} className='mt-auto' />
       <DataTableBulkActions table={table} />
+      <TaskDetailDialog
+        task={selectedTask}
+        open={isDetailSheetOpen}
+        onOpenChange={setIsDetailSheetOpen}
+      />
     </div>
   )
 }

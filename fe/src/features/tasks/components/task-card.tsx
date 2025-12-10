@@ -10,12 +10,14 @@ import { DataTableRowActions } from './data-table-row-actions'
 type TaskCardProps = {
   row: Row<Task>
   selectMode?: boolean
+  onTaskClick?: (task: Task) => void
   onSelectChange?: (selected: boolean) => void
 }
 
 export function TaskCard({
   row,
   selectMode = false,
+  onTaskClick,
   onSelectChange,
 }: TaskCardProps) {
   const task = row.original
@@ -28,15 +30,17 @@ export function TaskCard({
   return (
     <Card
       onClick={() => {
-        row.toggleSelected()
-        onSelectChange?.(!row.getIsSelected())
+        if (selectMode) {
+          row.toggleSelected()
+          onSelectChange?.(!row.getIsSelected())
+        }
       }}
       className={cn(
-        'cursor-pointer transition-all duration-200 hover:shadow-md',
+        'transition-all duration-200 hover:shadow-md',
         row.getIsSelected() && 'ring-primary ring-2 ring-offset-2'
       )}
     >
-      <CardHeader className='pb-3'>
+      <CardHeader className=''>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-2'>
             {selectMode && (
@@ -46,6 +50,7 @@ export function TaskCard({
                   row.toggleSelected(!!value)
                   onSelectChange?.(!!value)
                 }}
+                onClick={(e) => e.stopPropagation()}
                 aria-label='Select task'
                 className='translate-y-[2px]'
               />
@@ -57,7 +62,14 @@ export function TaskCard({
       </CardHeader>
 
       <CardContent className='space-y-3 pt-0'>
-        <div className='space-y-2'>
+        <div
+          onClick={() => {
+            if (!selectMode) {
+              onTaskClick?.(task)
+            }
+          }}
+          className='cursor-pointer space-y-2'
+        >
           <div className='flex items-center space-x-2'>
             {label && <Badge variant='outline'>{label.label}</Badge>}
           </div>
