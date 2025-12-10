@@ -84,17 +84,75 @@ export function TaskDetailDialog({
             )}
           </div>
 
-          {/* Task Description Placeholder */}
+          {/* Task Description */}
           <Card>
             <CardHeader className='pb-3'>
               <CardTitle className='text-sm font-medium'>Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className='text-muted-foreground text-sm'>
-                No description available for this task.
-              </p>
+              {task.description ? (
+                <div
+                  className='prose prose-sm max-w-none text-sm'
+                  dangerouslySetInnerHTML={{ __html: task.description }}
+                />
+              ) : (
+                <p className='text-muted-foreground text-sm'>
+                  No description available for this task.
+                </p>
+              )}
             </CardContent>
           </Card>
+
+          {/* Task Assignee and Due Date */}
+          {(task.assignee || task.due_date || task.created) && (
+            <Card>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-sm font-medium'>
+                  Additional Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-3'>
+                {task.assignee && (
+                  <div className='flex items-center gap-2'>
+                    <span className='text-muted-foreground text-sm font-medium'>
+                      Assignee:
+                    </span>
+                    <span className='text-sm'>{task.assignee}</span>
+                  </div>
+                )}
+                {task.due_date && (
+                  <div className='flex items-center gap-2'>
+                    <span className='text-muted-foreground text-sm font-medium'>
+                      Due Date:
+                    </span>
+                    <span className='text-sm'>
+                      {new Date(task.due_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                {task.created && (
+                  <div className='flex items-center gap-2'>
+                    <span className='text-muted-foreground text-sm font-medium'>
+                      Created:
+                    </span>
+                    <span className='text-sm'>
+                      {new Date(task.created).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                {task.updated && (
+                  <div className='flex items-center gap-2'>
+                    <span className='text-muted-foreground text-sm font-medium'>
+                      Updated:
+                    </span>
+                    <span className='text-sm'>
+                      {new Date(task.updated).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>

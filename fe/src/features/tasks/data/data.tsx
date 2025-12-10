@@ -38,7 +38,7 @@ export const statuses = [
   },
   {
     label: 'In Progress',
-    value: 'in progress' as const,
+    value: 'in_progress' as const,
     icon: Timer,
   },
   {
