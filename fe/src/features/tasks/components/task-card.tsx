@@ -22,6 +22,10 @@ export function TaskCard({ row, onSelectChange }: TaskCardProps) {
 
   return (
     <Card
+      onClick={() => {
+        row.toggleSelected()
+        onSelectChange?.(!row.getIsSelected())
+      }}
       className={cn(
         'cursor-pointer transition-all duration-200 hover:shadow-md',
         row.getIsSelected() && 'ring-primary ring-2 ring-offset-2'

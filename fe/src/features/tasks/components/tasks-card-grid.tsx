@@ -119,7 +119,7 @@ export function TasksCardGrid({ data }: DataTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div>
         {/* Card Grid Layout */}
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
           {table.getRowModel().rows?.length ? (
