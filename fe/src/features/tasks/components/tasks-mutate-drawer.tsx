@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { useForm } from 'react-hook-form'
+import { useForm, type Control } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,6 +22,14 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { SelectDropdown } from '@/components/select-dropdown'
 import type {
   TaskPriority,
@@ -48,12 +57,153 @@ const formSchema = z.object({
 })
 type TaskForm = z.infer<typeof formSchema>
 
+interface FormFieldsProps {
+  control: Control<TaskForm>
+}
+
+// Common form fields component - moved outside to prevent recreation on each render
+const FormFields = ({ control }: FormFieldsProps) => (
+  <>
+    <FormField
+      control={control}
+      name='title'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Title</FormLabel>
+          <FormControl>
+            <Input {...field} placeholder='Enter a title' />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={control}
+      name='description'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Description</FormLabel>
+          <FormControl>
+            <Input {...field} placeholder='Enter a description (optional)' />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={control}
+      name='status'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Status</FormLabel>
+          <SelectDropdown
+            defaultValue={field.value}
+            onValueChange={field.onChange}
+            placeholder='Select status'
+            items={[
+              { label: 'Todo', value: 'todo' },
+              { label: 'In Progress', value: 'in_progress' },
+              { label: 'Done', value: 'done' },
+              { label: 'Canceled', value: 'canceled' },
+              { label: 'Backlog', value: 'backlog' },
+            ]}
+          />
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={control}
+      name='label'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Label</FormLabel>
+          <SelectDropdown
+            defaultValue={field.value}
+            onValueChange={field.onChange}
+            placeholder='Select label (optional)'
+            items={[
+              { label: 'Bug', value: 'bug' },
+              { label: 'Feature', value: 'feature' },
+              { label: 'Documentation', value: 'documentation' },
+            ]}
+          />
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={control}
+      name='priority'
+      render={({ field }) => (
+        <FormItem className='relative'>
+          <FormLabel>Priority</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              className='flex flex-col space-y-1'
+            >
+              <FormItem className='flex items-center'>
+                <FormControl>
+                  <RadioGroupItem value='high' />
+                </FormControl>
+                <FormLabel className='font-normal'>High</FormLabel>
+              </FormItem>
+              <FormItem className='flex items-center'>
+                <FormControl>
+                  <RadioGroupItem value='medium' />
+                </FormControl>
+                <FormLabel className='font-normal'>Medium</FormLabel>
+              </FormItem>
+              <FormItem className='flex items-center'>
+                <FormControl>
+                  <RadioGroupItem value='low' />
+                </FormControl>
+                <FormLabel className='font-normal'>Low</FormLabel>
+              </FormItem>
+            </RadioGroup>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={control}
+      name='assignee'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Assignee</FormLabel>
+          <FormControl>
+            <Input {...field} placeholder='Enter assignee name (optional)' />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    {/* <FormField
+      control={control}
+      name='due_date'
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Due Date</FormLabel>
+          <FormControl>
+            <Input {...field} type='datetime-local' />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    /> */}
+  </>
+)
+
 export function TasksMutateDrawer({
   open,
   onOpenChange,
   currentRow,
 }: TaskMutateDrawerProps) {
   const isUpdate = !!currentRow
+  const isMobile = useIsMobile()
   const { createTask, updateTask, isLoading } = useTasks()
 
   const form = useForm<TaskForm>({
@@ -107,24 +257,70 @@ export function TasksMutateDrawer({
     }
   }
 
+  const handleOpenChange = (v: boolean) => {
+    onOpenChange(v)
+    if (!v) {
+      form.reset()
+    }
+  }
+
+  const title = `${isUpdate ? 'Update' : 'Create'} Task`
+  const description = isUpdate
+    ? 'Update the task by providing necessary info.'
+    : 'Add a new task by providing necessary info.'
+  const descriptionSuffix = "Click save when you're done."
+
+  if (isMobile) {
+    // Mobile: Use right sheet
+    return (
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent side='right' className='flex flex-col'>
+          <SheetHeader className='text-start'>
+            <SheetTitle>{title}</SheetTitle>
+            <SheetDescription>
+              {description} {descriptionSuffix}
+            </SheetDescription>
+          </SheetHeader>
+          <Form {...form}>
+            <form
+              id='tasks-form'
+              onSubmit={form.handleSubmit(onSubmit)}
+              className='flex-1 space-y-6 overflow-y-auto p-2'
+            >
+              <FormFields control={form.control} />
+            </form>
+          </Form>
+          <SheetFooter className='gap-2'>
+            <Button
+              variant='outline'
+              disabled={isLoading}
+              onClick={() => handleOpenChange(false)}
+              className='w-full'
+            >
+              Close
+            </Button>
+            <Button
+              form='tasks-form'
+              type='submit'
+              disabled={isLoading}
+              className='w-full'
+            >
+              {isLoading ? 'Saving...' : 'Save changes'}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  // Desktop: Use dialog
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v)
-        if (!v) {
-          form.reset()
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='flex flex-col sm:max-w-[500px]'>
         <DialogHeader className='text-start'>
-          <DialogTitle>{isUpdate ? 'Update' : 'Create'} Task</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {isUpdate
-              ? 'Update the task by providing necessary info.'
-              : 'Add a new task by providing necessary info.'}
-            Click save when you're done.
+            {description} {descriptionSuffix}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -133,142 +329,7 @@ export function TasksMutateDrawer({
             onSubmit={form.handleSubmit(onSubmit)}
             className='flex-1 space-y-6 overflow-y-auto px-4'
           >
-            <FormField
-              control={form.control}
-              name='title'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder='Enter a title' />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder='Enter a description (optional)'
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='status'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <SelectDropdown
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder='Select status'
-                    items={[
-                      { label: 'Todo', value: 'todo' },
-                      { label: 'In Progress', value: 'in_progress' },
-                      { label: 'Done', value: 'done' },
-                      { label: 'Canceled', value: 'canceled' },
-                      { label: 'Backlog', value: 'backlog' },
-                    ]}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='label'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Label</FormLabel>
-                  <SelectDropdown
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder='Select label (optional)'
-                    items={[
-                      { label: 'Bug', value: 'bug' },
-                      { label: 'Feature', value: 'feature' },
-                      { label: 'Documentation', value: 'documentation' },
-                    ]}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='priority'
-              render={({ field }) => (
-                <FormItem className='relative'>
-                  <FormLabel>Priority</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className='flex flex-col space-y-1'
-                    >
-                      <FormItem className='flex items-center'>
-                        <FormControl>
-                          <RadioGroupItem value='high' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>High</FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center'>
-                        <FormControl>
-                          <RadioGroupItem value='medium' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Medium</FormLabel>
-                      </FormItem>
-                      <FormItem className='flex items-center'>
-                        <FormControl>
-                          <RadioGroupItem value='low' />
-                        </FormControl>
-                        <FormLabel className='font-normal'>Low</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='assignee'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assignee</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder='Enter assignee name (optional)'
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='due_date'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Due Date</FormLabel>
-                  <FormControl>
-                    <Input {...field} type='datetime-local' />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormFields control={form.control} />
           </form>
         </Form>
         <DialogFooter className='gap-2'>
