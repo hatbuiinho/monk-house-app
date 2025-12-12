@@ -1,4 +1,4 @@
-import { startOfDay } from 'date-fns'
+import { format, startOfDay } from 'date-fns'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
@@ -38,6 +38,7 @@ export function DataTableToolbar<TData>({
   onSelectModeChange,
   filters = [],
   dateFilters = [],
+  navigate,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
@@ -97,17 +98,17 @@ export function DataTableToolbar<TData>({
             const currentDate = column.getFilterValue() as Date
             const defaultDate = dateFilter.defaultDate || startOfDay(new Date())
 
-            // if (
-            //   format(currentDate, 'dd/MM/yyyy') ===
-            //   format(defaultDate, 'dd/MM/yyyy')
-            // ) {
-            //   navigate({
-            //     search: (prev) => ({
-            //       ...prev,
-            //       [dateFilter.columnId]: currentDate.toDateString(),
-            //     }),
-            //   })
-            // }
+            if (
+              format(currentDate, 'dd/MM/yyyy') ===
+              format(defaultDate, 'dd/MM/yyyy')
+            ) {
+              navigate({
+                search: (prev) => ({
+                  ...prev,
+                  [dateFilter.columnId]: currentDate.toDateString(),
+                }),
+              })
+            }
             return (
               <DatePicker
                 key={dateFilter.columnId}
