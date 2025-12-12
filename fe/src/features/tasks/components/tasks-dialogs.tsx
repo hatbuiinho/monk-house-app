@@ -22,7 +22,7 @@ export function TasksDialogs() {
       <TasksMutateDrawer
         key='task-create'
         open={open === 'create'}
-        onOpenChange={() => setOpen('create')}
+        onOpenChange={() => setOpen(null)}
       />
 
       <TasksImportDialog

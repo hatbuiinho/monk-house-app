@@ -101,7 +101,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  // Query for statistics
+  //TODO: Query for statistics
   const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ['users-stats'],
     queryFn: () => usersAPI.getUserStats(),

@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import useDialogState from '@/hooks/use-dialog-state'
 import { tasksAPI } from '../api/tasks-api'
 import type {
-  TaskStats,
   Task,
   TaskCreate,
   TaskFilter,
@@ -44,9 +43,9 @@ type TasksContextType = {
   setFilters: (filters: TaskFilter) => void
   clearFilters: () => void
 
-  // Statistics
-  stats: TaskStats | undefined
-  refetchStats: () => void
+  // TODO: Statistics
+  // stats: TaskStats | undefined
+  // refetchStats: () => void
 }
 
 const TasksContext = React.createContext<TasksContextType | null>(null)
@@ -76,12 +75,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  // Query for statistics
-  const { data: stats, refetch: refetchStats } = useQuery({
-    queryKey: ['tasks-stats'],
-    queryFn: () => tasksAPI.getTaskStats(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  })
+  //TODO: Query for statistics
+  // const { data: stats, refetch: refetchStats } = useQuery({
+  //   queryKey: ['tasks-stats'],
+  //   queryFn: () => tasksAPI.getTaskStats(),
+  //   staleTime: 2 * 60 * 1000, // 2 minutes
+  // })
 
   // Create task mutation
   const createTaskMutation = useMutation({
@@ -211,9 +210,9 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     setFilters,
     clearFilters,
 
-    // Statistics
-    stats,
-    refetchStats,
+    //TODO: Statistics
+    // stats,
+    // refetchStats,
   }
 
   return (
