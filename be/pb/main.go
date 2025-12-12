@@ -1,12 +1,13 @@
 package main
+
 import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -19,6 +20,30 @@ func main() {
 	}
 
 	app := pocketbase.New()
+
+	// fires only for "tasks" collections
+	app.OnRecordCreateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
+		// e.App
+		// e.Collection
+		// e.Record
+		// and all RequestEvent fields...
+		if !e.Auth.IsSuperuser() {
+			e.Record.Set("createdBy", e.Auth.Id)
+		}
+		return e.Next()
+	})
+
+	// fires only for "tasks" collections
+	app.OnRecordUpdateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
+		// e.App
+		// e.Collection
+		// e.Record
+		// and all RequestEvent fields...
+		if !e.Auth.IsSuperuser() {
+			e.Record.Set("updatedBy", e.Auth.Id)
+		}
+		return e.Next()
+	})
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		log.Println("PocketBase server starting with custom routes...")
