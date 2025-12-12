@@ -126,6 +126,13 @@ export function TasksTable({ data }: DataTableProps) {
             options: priorities,
           },
         ]}
+        dateFilters={[
+          {
+            columnId: 'created',
+            title: 'Created Date',
+            defaultDate: new Date(),
+          },
+        ]}
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

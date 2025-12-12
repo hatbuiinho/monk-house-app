@@ -116,6 +116,30 @@ export const tasksColumns: ColumnDef<Task>[] = [
     },
   },
   {
+    accessorKey: 'created',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Created' />
+    ),
+    meta: { className: 'ps-1', tdClassName: 'ps-3' },
+    cell: ({ row }) => {
+      if (!row) {
+        return null
+      }
+
+      return (
+        <div className='flex items-center gap-2'>
+          <span>{row.getValue('created')}</span>
+        </div>
+      )
+    },
+    filterFn: (row, id, value) => {
+      if (Array.isArray(value)) {
+        return value.includes(row.getValue(id))
+      }
+      return value === row.getValue(id)
+    },
+  },
+  {
     id: 'actions',
     cell: ({ row }) => <DataTableRowActions row={row} />,
   },

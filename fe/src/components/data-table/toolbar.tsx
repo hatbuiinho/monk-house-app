@@ -1,6 +1,8 @@
+import { startOfDay } from 'date-fns'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
@@ -20,6 +22,11 @@ type DataTableToolbarProps<TData> = {
       icon?: React.ComponentType<{ className?: string }>
     }[]
   }[]
+  dateFilters?: {
+    columnId: string
+    title?: string
+    defaultDate?: Date
+  }[]
 }
 
 export function DataTableToolbar<TData>({
@@ -29,6 +36,7 @@ export function DataTableToolbar<TData>({
   selectMode = false,
   onSelectModeChange,
   filters = [],
+  dateFilters = [],
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
@@ -68,13 +76,43 @@ export function DataTableToolbar<TData>({
               />
             )
           })}
+          {dateFilters.map((dateFilter) => {
+            const column = table.getColumn(dateFilter.columnId)
+            if (!column) return null
+
+            // Get current filter value or use default date (today)
+            const currentDate = column.getFilterValue() as Date | undefined
+            const defaultDate = dateFilter.defaultDate || startOfDay(new Date())
+
+            return (
+              <DatePicker
+                key={dateFilter.columnId}
+                date={currentDate || defaultDate}
+                onDateChange={(date) => {
+                  column.setFilterValue(date)
+                }}
+                placeholder={dateFilter.title || 'Select date'}
+              />
+            )
+          })}
         </div>
-        {isFiltered && (
+        {(isFiltered ||
+          dateFilters.some((dateFilter) => {
+            const column = table.getColumn(dateFilter.columnId)
+            return column?.getFilterValue()
+          })) && (
           <Button
             variant='ghost'
             onClick={() => {
               table.resetColumnFilters()
               table.setGlobalFilter('')
+              // Clear all date filters
+              // dateFilters.forEach((dateFilter) => {
+              //   const column = table.getColumn(dateFilter.columnId)
+              //   if (column) {
+              //     column.setFilterValue(undefined)
+              //   }
+              // })
             }}
             className='h-8 px-2 lg:px-3'
           >

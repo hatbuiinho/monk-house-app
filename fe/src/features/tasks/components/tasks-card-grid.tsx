@@ -58,6 +58,7 @@ export function TasksCardGrid({ data }: DataTableProps) {
     columnFilters: [
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'priority', searchKey: 'priority', type: 'array' },
+      { columnId: 'created', searchKey: 'created', type: 'date' },
     ],
   })
 
@@ -122,6 +123,13 @@ export function TasksCardGrid({ data }: DataTableProps) {
             columnId: 'priority',
             title: 'Priority',
             options: priorities,
+          },
+        ]}
+        dateFilters={[
+          {
+            columnId: 'created',
+            title: 'Created Date',
+            defaultDate: new Date(),
           },
         ]}
       />

@@ -120,6 +120,13 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
             options: roles.map((role) => ({ ...role })),
           },
         ]}
+        dateFilters={[
+          {
+            columnId: 'created',
+            title: 'Created Date',
+            defaultDate: new Date(),
+          },
+        ]}
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

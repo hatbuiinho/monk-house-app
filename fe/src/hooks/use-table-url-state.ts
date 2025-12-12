@@ -45,6 +45,13 @@ type UseTableUrlStateParams = {
         serialize?: (value: unknown) => unknown
         deserialize?: (value: unknown) => unknown
       }
+    | {
+        columnId: string
+        searchKey: string
+        type: 'date'
+        serialize?: (value: unknown) => unknown
+        deserialize?: (value: unknown) => unknown
+      }
   >
 }
 
@@ -94,6 +101,11 @@ export function useTableUrlState(
       if (cfg.type === 'string') {
         const value = (deserialize(raw) as string) ?? ''
         if (typeof value === 'string' && value.trim() !== '') {
+          collected.push({ id: cfg.columnId, value })
+        }
+      } else if (cfg.type === 'date') {
+        const value = raw ? (new Date(raw as string) as Date) : new Date()
+        if (value) {
           collected.push({ id: cfg.columnId, value })
         }
       } else {
@@ -173,6 +185,14 @@ export function useTableUrlState(
           typeof found?.value === 'string' ? (found.value as string) : ''
         patch[cfg.searchKey] =
           value.trim() !== '' ? serialize(value) : undefined
+      } else if (cfg.type === 'date') {
+        const rawValue = found?.value
+        const value =
+          typeof rawValue === 'object'
+            ? (rawValue as Date).toDateString()
+            : undefined
+
+        patch[cfg.searchKey] = value
       } else {
         const value = Array.isArray(found?.value)
           ? (found!.value as unknown[])
@@ -180,7 +200,6 @@ export function useTableUrlState(
         patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
       }
     }
-
     navigate({
       search: (prev) => ({
         ...(prev as SearchRecord),
