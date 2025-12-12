@@ -113,6 +113,7 @@ export function TasksCardGrid({ data }: DataTableProps) {
         searchPlaceholder='Filter by title or ID...'
         selectMode={selectMode}
         onSelectModeChange={setSelectMode}
+        navigate={route.useNavigate()}
         filters={[
           {
             columnId: 'status',

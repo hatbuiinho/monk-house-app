@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,  
+  DialogTitle,
 } from '@/components/ui/dialog'
 import {
   Form,
@@ -29,8 +29,7 @@ import { type User } from '../data/schema'
 
 const formSchema = z
   .object({
-    firstName: z.string().min(1, 'First Name is required.'),
-    lastName: z.string().min(1, 'Last Name is required.'),
+    name: z.string().min(1, 'Name is required.'),
     username: z.string().min(1, 'Username is required.'),
     phoneNumber: z.string().min(1, 'Phone number is required.'),
     email: z.email({
@@ -115,8 +114,7 @@ export function UsersActionDialog({
           isEdit,
         }
       : {
-          firstName: '',
-          lastName: '',
+          name: '',
           username: '',
           email: '',
           role: '',
@@ -160,7 +158,7 @@ export function UsersActionDialog({
             >
               <FormField
                 control={form.control}
-                name='firstName'
+                name='name'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
                     <FormLabel className='col-span-2 text-end'>
@@ -178,26 +176,7 @@ export function UsersActionDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name='lastName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>
-                      Last Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='Doe'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
+
               <FormField
                 control={form.control}
                 name='username'

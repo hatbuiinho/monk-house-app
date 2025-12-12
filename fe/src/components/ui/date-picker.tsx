@@ -25,21 +25,20 @@ export function DatePicker({
   className,
   disabled = false,
 }: DatePickerProps) {
-  console.log('from date picker', { date })
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant='outline'
           className={cn(
-            'h-8 w-[200px] justify-start text-left font-normal',
+            'h-8 justify-start text-left font-normal',
             !date && 'text-muted-foreground',
             className
           )}
           disabled={disabled}
         >
           <CalendarIcon className='mr-2 h-4 w-4' />
-          {date ? format(date, 'PPP') : placeholder}
+          {date ? format(date, 'dd/MM/yyyy') : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0' align='start'>

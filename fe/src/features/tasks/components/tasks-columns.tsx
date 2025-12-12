@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -133,10 +134,10 @@ export const tasksColumns: ColumnDef<Task>[] = [
       )
     },
     filterFn: (row, id, value) => {
-      if (Array.isArray(value)) {
-        return value.includes(row.getValue(id))
-      }
-      return value === row.getValue(id)
+      const filterDate = new Date(value)
+      const rowDate = new Date(row.getValue(id))
+
+      return format(rowDate, 'dd/MM/yyyy') === format(filterDate, 'dd/MM/yyyy')
     },
   },
   {
