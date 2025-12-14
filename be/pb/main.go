@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -201,7 +203,7 @@ func handleMattermostCallback(c *core.RequestEvent, app *pocketbase.PocketBase) 
 	}
 
 	// Generate PocketBase auth token using superuser impersonation
-	authToken, err := generatePocketBaseAuthToken(app, user["email"].(string))
+	authToken, err := generatePocketBaseAuthToken(app, user["id"].(string))
 	if err != nil {
 		log.Printf("Failed to generate auth token: %v", err)
 		return c.JSON(500, AuthResponse{
@@ -367,7 +369,7 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 }
 
 // Generate PocketBase auth token using superuser impersonation
-func generatePocketBaseAuthToken(app *pocketbase.PocketBase, email string) (string, error) {
+func generatePocketBaseAuthToken(app *pocketbase.PocketBase, userID string) (string, error) {
 	// Authenticate as superuser
 	// superuserEmail := os.Getenv("POCKETBASE_SUPERUSER_EMAIL")
 	// superuserPassword := os.Getenv("POCKETBASE_SUPERUSER_PASSWORD")
@@ -375,9 +377,10 @@ func generatePocketBaseAuthToken(app *pocketbase.PocketBase, email string) (stri
 	// if superuserEmail == "" || superuserPassword == "" {
 	// 	return "", fmt.Errorf("superuser credentials not configured")
 	// }
-	authUser, err := app.FindAuthRecordByEmail("users", email)
+
+	authUser, err := app.FindRecordById("users", userID)
 	if err != nil {
-		log.Println("find auth %s, user id: %s", err, email)
+		log.Println("find auth %s, user id: %s", err, userID)
 	}
 	// For this implementation, we'll use a simplified approach
 	// that generates a token representing an impersonated user session
@@ -390,7 +393,7 @@ func generatePocketBaseAuthToken(app *pocketbase.PocketBase, email string) (stri
 	if err2 != nil {
 		log.Println("create auth %s", err)
 	}
-	fmt.Sprintf("pb_impersonation_%s_%d_3600", email, token)
+	fmt.Sprintf("pb_impersonation_%s_%d_3600", userID, token)
 
 	return token, nil
 }
@@ -407,5 +410,7 @@ func getMattermostConfig() MattermostConfig {
 
 // Generate random state for CSRF protection
 func generateState() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }
