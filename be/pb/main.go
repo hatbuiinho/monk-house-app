@@ -101,6 +101,10 @@ func main() {
 			return handleMattermostCallback(c, app)
 		})
 
+		e.Router.POST("/api/auth/exchange", func(c *core.RequestEvent) error {
+			return handleOAuthExchange(c, app)
+		})
+
 		// Health check
 		e.Router.GET("/health", func(c *core.RequestEvent) error {
 			return c.JSON(200, map[string]string{"status": "ok"})
@@ -136,9 +140,12 @@ func handleMattermostLogin(c *core.RequestEvent, app *pocketbase.PocketBase) err
 	// Store state in session/cookie (simplified for demo)
 	// In production, use proper session management
 	c.SetCookie(&http.Cookie{
-		Name:  "oauth_state",
-		Value: state,
-		Path:  "/",
+		Name:     "oauth_state",
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	// Build Mattermost OAuth2 URL
@@ -202,30 +209,55 @@ func handleMattermostCallback(c *core.RequestEvent, app *pocketbase.PocketBase) 
 		})
 	}
 
-	// Generate PocketBase auth token using superuser impersonation
-	authToken, err := generatePocketBaseAuthToken(app, user["id"].(string))
+	// Clear OAuth state cookie
+	c.SetCookie(&http.Cookie{
+		Name:     "oauth_state",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	collection, err := app.FindCollectionByNameOrId("oauth_sessions")
 	if err != nil {
-		log.Printf("Failed to generate auth token: %v", err)
-		return c.JSON(500, AuthResponse{
-			Success: false,
-			Error:   "Failed to generate authentication token",
+		return c.JSON(500, map[string]string{
+			"error": "oauth sessions collection not found",
 		})
 	}
 
-	// Clear OAuth state cookie
-	c.SetCookie(&http.Cookie{
-		Name:   "oauth_state",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
+	frontendURL := os.Getenv("APP_URL")
 
-	// Return success response
-	return c.JSON(200, AuthResponse{
-		Success: true,
-		User:    user,
-		Token:   authToken,
-	})
+	existingSession, _ := app.FindFirstRecordByFilter(
+		collection,
+		"state = {:state}",
+		dbx.Params{"state": state},
+	)
+
+	if existingSession != nil {
+		// Đã xử lý callback này rồi → chỉ redirect lại FE
+		redirectURL := fmt.Sprintf("%s/oauth/callback?code=%s",
+			frontendURL,
+			url.QueryEscape(existingSession.GetString("code")),
+		)
+		return c.Redirect(302, redirectURL)
+	}
+
+	exchangeCode, err := createOAuthSession(app, user["id"].(string), state)
+	if err != nil {
+		return c.JSON(500, map[string]string{
+			"error": "failed to create oauth session",
+		})
+	}
+
+	redirectURL := fmt.Sprintf(
+		"%s/oauth/callback?code=%s",
+		frontendURL,
+		url.QueryEscape(exchangeCode),
+	)
+
+	return c.Redirect(http.StatusFound, redirectURL)
 }
 
 // Exchange authorization code for access token
@@ -338,7 +370,6 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 		// Create new user
 		// userRecord = core.NewRecord(collection)
 		userRecord.Set("id", mmUser.ID)
-		log.Println("ID của mattermost là ======= %s", mmUser.ID)
 		userRecord.Set("email", mmUser.Email)
 		userRecord.Set("name", fmt.Sprintf("%s %s", mmUser.FirstName, mmUser.LastName))
 		userRecord.Set("username", mmUser.Username)
@@ -357,7 +388,7 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 	}
 
 	// Return user data
-	user := map[string]interface{}{
+	user := map[string]any{
 		"id":       userRecord.Id,
 		"email":    userRecord.GetString("email"),
 		"name":     userRecord.GetString("name"),
@@ -366,36 +397,6 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 	}
 
 	return user, nil
-}
-
-// Generate PocketBase auth token using superuser impersonation
-func generatePocketBaseAuthToken(app *pocketbase.PocketBase, userID string) (string, error) {
-	// Authenticate as superuser
-	// superuserEmail := os.Getenv("POCKETBASE_SUPERUSER_EMAIL")
-	// superuserPassword := os.Getenv("POCKETBASE_SUPERUSER_PASSWORD")
-
-	// if superuserEmail == "" || superuserPassword == "" {
-	// 	return "", fmt.Errorf("superuser credentials not configured")
-	// }
-
-	authUser, err := app.FindRecordById("users", userID)
-	if err != nil {
-		log.Println("find auth %s, user id: %s", err, userID)
-	}
-	// For this implementation, we'll use a simplified approach
-	// that generates a token representing an impersonated user session
-	// This demonstrates the impersonation concept without requiring
-	// complex PocketBase internal API usage
-
-	// Create a token that represents an impersonated user session
-	// Format: pb_impersonation_<userID>_<timestamp>_<duration>
-	token, err2 := authUser.NewAuthToken()
-	if err2 != nil {
-		log.Println("create auth %s", err)
-	}
-	fmt.Sprintf("pb_impersonation_%s_%d_3600", userID, token)
-
-	return token, nil
 }
 
 // Get Mattermost configuration from environment
@@ -413,4 +414,86 @@ func generateState() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func createOAuthSession(
+	app *pocketbase.PocketBase,
+	userId string,
+	state string,
+) (string, error) {
+
+	collection, err := app.FindCollectionByNameOrId("oauth_sessions")
+	if err != nil {
+		return "", err
+	}
+
+	code := generateState()
+
+	record := core.NewRecord(collection)
+	record.Set("code", code)
+	record.Set("user", userId)
+	record.Set("used", false)
+	record.Set("state", state)
+	record.Set("expiresAt", time.Now().Add(2*time.Minute))
+
+	if err := app.Save(record); err != nil {
+		return "", err
+	}
+
+	return code, nil
+}
+
+func handleOAuthExchange(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+	var body struct {
+		Code string `json:"code"`
+	}
+
+	if err := c.BindBody(&body); err != nil {
+		return c.JSON(400, map[string]string{"error": "invalid request"})
+	}
+
+	collection, _ := app.FindCollectionByNameOrId("oauth_sessions")
+
+	session, err := app.FindFirstRecordByFilter(
+		collection,
+		"code = {:code} && used = false",
+		dbx.Params{"code": body.Code},
+	)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": "invalid code"})
+	}
+
+	expires := session.GetDateTime("expiresAt")
+	if expires.Time().Before(time.Now()) {
+		return c.JSON(400, map[string]string{"error": "code expired"})
+	}
+
+	userId := session.GetString("user")
+	user, err := app.FindRecordById("users", userId)
+	if err != nil {
+		return c.JSON(400, map[string]string{"error": "user not found"})
+	}
+
+	token, err := user.NewAuthToken()
+	if err != nil {
+		return c.JSON(500, map[string]string{"error": "token error"})
+	}
+
+	session.Set("used", true)
+	_ = app.Save(session)
+
+	userInfo := map[string]interface{}{
+		"id":       user.Id,
+		"email":    user.GetString("email"),
+		"name":     user.GetString("name"),
+		"username": user.GetString("username"),
+		"avatar":   user.GetString("avatar"),
+	}
+
+	// Return success response
+	return c.JSON(200, AuthResponse{
+		Success: true,
+		User:    userInfo,
+		Token:   token,
+	})
 }
