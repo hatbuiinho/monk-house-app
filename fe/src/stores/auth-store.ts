@@ -3,10 +3,13 @@ import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 const ACCESS_TOKEN = 'thisisjustarandomstring'
 
-interface AuthUser {
-  accountNo: string
+export interface AuthUser {
+  id: string
+  name: string
+  username: string
   email: string
-  role: string[]
+  role: string
+  avatar?: string
   exp: number
 }
 

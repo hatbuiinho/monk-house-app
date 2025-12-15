@@ -5,9 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
-import { IconFacebook, IconGithub } from '@/assets/brand-icons'
+import { IconFacebook, IconGithub, IconMattermost } from '@/assets/brand-icons'
 import { useAuthStore } from '@/stores/auth-store'
-import { auth } from '@/lib/pocketbase'
+import { auth, pb } from '@/lib/pocketbase'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,30 +57,32 @@ export function UserAuthForm({
 
     try {
       // Use PocketBase authentication
-      const result = await auth.loginWithPassword(data.email, data.password)
+      const { user, token, success, error } = await auth.loginWithPassword(
+        data.email,
+        data.password
+      )
 
-      if (result.success && result.user && result.token) {
+      if (success && user && token) {
         // Convert PocketBase user to the format expected by the auth store
         const pbUser = {
-          accountNo: result.user.id,
-          email: result.user.email,
-          role: ['user'], // Default role, you can modify this based on your PocketBase user model
+          id: user.id,
+          email: user.email,
           exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
         }
 
         // Set user and access token in the auth store
+        pb.authStore.save(token)
         authStore.setUser(pbUser)
-        authStore.setAccessToken(result.token)
 
-        toast.success(`Welcome back, ${result.user.email}!`)
+        toast.success(`Welcome back, ${user.email}!`)
 
         // Redirect to the stored location or default to dashboard
         const targetPath = redirectTo || '/'
         navigate({ to: targetPath, replace: true })
       } else {
         // Handle authentication failure
-        toast.error(result.error || 'Login failed')
-        // console.error('Login failed:', result.error)
+        toast.error(error || 'Login failed')
+        // console.error('Login failed:', error)
       }
     } catch (error) {
       // Handle any unexpected errors
@@ -91,6 +93,12 @@ export function UserAuthForm({
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleMattermostLogin = () => {
+    // Redirect to Mattermost OAuth endpoint
+    const mattermostOAuthUrl = `${import.meta.env.VITE_POCKETBASE_URL}/api/auth/mattermost/login`
+    window.location.href = mattermostOAuthUrl
   }
 
   return (
@@ -148,12 +156,20 @@ export function UserAuthForm({
           </div>
         </div>
 
-        <div className='grid grid-cols-2 gap-2'>
+        <div className='grid grid-cols-3 gap-2'>
           <Button variant='outline' type='button' disabled={isLoading}>
             <IconGithub className='h-4 w-4' /> GitHub
           </Button>
           <Button variant='outline' type='button' disabled={isLoading}>
             <IconFacebook className='h-4 w-4' /> Facebook
+          </Button>
+          <Button
+            variant='outline'
+            type='button'
+            disabled={isLoading}
+            onClick={handleMattermostLogin}
+          >
+            <IconMattermost className='h-4 w-4' /> Mattermost
           </Button>
         </div>
       </form>

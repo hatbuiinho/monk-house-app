@@ -7,6 +7,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react'
+import type { AuthUser } from '@/stores/auth-store'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -27,11 +28,7 @@ import {
 import { SignOutDialog } from '@/components/sign-out-dialog'
 
 type NavUserProps = {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
+  user: AuthUser
 }
 
 export function NavUser({ user }: NavUserProps) {
@@ -72,19 +69,21 @@ export function NavUser({ user }: NavUserProps) {
                     <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
-                    <span className='truncate font-semibold'>{user.name}</span>
+                    <span className='truncate font-semibold'>
+                      {user.name.trim() || user.username}
+                    </span>
                     <span className='truncate text-xs'>{user.email}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
+              {/* <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles />
                   Upgrade to Pro
                 </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
+              </DropdownMenuGroup> */}
+              {/* <DropdownMenuSeparator /> */}
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                   <Link to='/settings/account'>
