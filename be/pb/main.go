@@ -369,13 +369,18 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 	} else {
 		// Create new user
 		// userRecord = core.NewRecord(collection)
+		roleIds, err := getRoleIdsByCodes(app, []string{"member"})
+		if err != nil {
+			return nil, err
+		}
+
 		userRecord.Set("id", mmUser.ID)
 		userRecord.Set("email", mmUser.Email)
 		userRecord.Set("name", fmt.Sprintf("%s %s", mmUser.FirstName, mmUser.LastName))
 		userRecord.Set("username", mmUser.Username)
 		userRecord.Set("avatar", mmUser.AvatarURL)
 		userRecord.Set("status", "active")
-		userRecord.Set("role", "member")
+		userRecord.Set("roles", roleIds)
 		userRecord.Set("phoneNumber", "")
 		userRecord.Set("created", types.NowDateTime())
 		userRecord.Set("updated", types.NowDateTime())
@@ -394,6 +399,7 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 		"name":     userRecord.GetString("name"),
 		"username": userRecord.GetString("username"),
 		"avatar":   userRecord.GetString("avatar"),
+		"role":     userRecord.GetString("role"),
 	}
 
 	return user, nil
@@ -470,8 +476,24 @@ func handleOAuthExchange(c *core.RequestEvent, app *pocketbase.PocketBase) error
 
 	userId := session.GetString("user")
 	user, err := app.FindRecordById("users", userId)
+
 	if err != nil {
 		return c.JSON(400, map[string]string{"error": "user not found"})
+	}
+
+	errs := app.ExpandRecord(user, []string{"roles"}, nil)
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to expand: %v", errs)
+	}
+
+	roles := []map[string]string{}
+
+	for _, r := range user.ExpandedAll("roles") {
+		roles = append(roles, map[string]string{
+			"id":   r.Id,
+			"name": r.GetString("name"),
+			"code": r.GetString("code"),
+		})
 	}
 
 	token, err := user.NewAuthToken()
@@ -488,6 +510,7 @@ func handleOAuthExchange(c *core.RequestEvent, app *pocketbase.PocketBase) error
 		"name":     user.GetString("name"),
 		"username": user.GetString("username"),
 		"avatar":   user.GetString("avatar"),
+		"roles":    roles,
 	}
 
 	// Return success response
@@ -496,4 +519,26 @@ func handleOAuthExchange(c *core.RequestEvent, app *pocketbase.PocketBase) error
 		User:    userInfo,
 		Token:   token,
 	})
+}
+
+func getRoleIdsByCodes(app *pocketbase.PocketBase, codes []string) ([]string, error) {
+	collection, err := app.FindCollectionByNameOrId("roles")
+	if err != nil {
+		return nil, err
+	}
+
+	var ids []string
+	for _, code := range codes {
+		record, err := app.FindFirstRecordByFilter(
+			collection,
+			"code = {:code}",
+			dbx.Params{"code": code},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("role not found: %s", code)
+		}
+		ids = append(ids, record.Id)
+	}
+
+	return ids, nil
 }
