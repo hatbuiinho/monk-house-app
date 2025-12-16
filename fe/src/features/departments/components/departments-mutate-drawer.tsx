@@ -104,7 +104,7 @@ export function DepartmentsMutateDrawer({
     const code = data.name
       .normalize('NFD') // tách dấu ra khỏi chữ
       .replace(/[\u0300-\u036f]/g, '') // xóa dấu
-      .replace(/\s+/g, '_') // đổi khoảng trắng thành _
+      .replace(/\s+/g, '-') // đổi khoảng trắng thành _
       .toLowerCase()
     try {
       if (isUpdate && currentRow) {
