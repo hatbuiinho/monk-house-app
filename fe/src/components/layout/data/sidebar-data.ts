@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Users,
+  Grid2X2,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -45,11 +46,11 @@ export const sidebarData: SidebarData = {
           url: '/tasks',
           icon: ListTodo,
         },
-        // {
-        //   title: 'Apps',
-        //   url: '/apps',
-        //   icon: Package,
-        // },
+        {
+          title: 'Departments',
+          url: '/departments',
+          icon: Grid2X2,
+        },
         // {
         //   title: 'Chats',
         //   url: '/chats',

@@ -13,8 +13,9 @@ import {
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { priorities, statuses } from '../data/data'
+import { statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { TaskCard } from './task-card'
@@ -120,17 +121,17 @@ export function TasksCardGrid({ data }: DataTableProps) {
             title: 'Status',
             options: statuses,
           },
-          {
-            columnId: 'priority',
-            title: 'Priority',
-            options: priorities,
-          },
+          // {
+          //   columnId: 'priority',
+          //   title: 'Priority',
+          //   options: priorities,
+          // },
         ]}
         dateFilters={[
           {
             columnId: 'created',
             title: 'Created Date',
-            defaultDate: new Date(),
+            // defaultDate: new Date(),
           },
         ]}
       />
@@ -156,7 +157,28 @@ export function TasksCardGrid({ data }: DataTableProps) {
           )}
         </div>
       </div>
+
       <DataTablePagination table={table} className='mt-auto' />
+      <div className='p-3'></div>
+      <Tabs
+        onValueChange={(value) => {
+          const column = table.getColumn('status')
+          column?.setFilterValue(value)
+        }}
+        defaultValue='todo'
+        className='fixed right-2 bottom-2 left-2 w-full md:hidden'
+      >
+        <TabsList className='h-full w-full'>
+          {statuses.map((status) => (
+            <TabsTrigger key={status.value} value={status.value}>
+              {status.icon && (
+                <status.icon className='text-muted-foreground size-4' />
+              )}
+              {status.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <DataTableBulkActions table={table} />
       <TaskDetailDialog
         task={selectedTask}

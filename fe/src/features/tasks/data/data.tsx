@@ -26,11 +26,11 @@ export const labels = [
 ]
 
 export const statuses = [
-  {
-    label: 'Backlog',
-    value: 'backlog' as const,
-    icon: HelpCircle,
-  },
+  // {
+  //   label: 'Backlog',
+  //   value: 'backlog' as const,
+  //   icon: HelpCircle,
+  // },
   {
     label: 'Todo',
     value: 'todo' as const,
@@ -46,11 +46,11 @@ export const statuses = [
     value: 'done' as const,
     icon: CheckCircle,
   },
-  {
-    label: 'Canceled',
-    value: 'canceled' as const,
-    icon: CircleOff,
-  },
+  // {
+  //   label: 'Canceled',
+  //   value: 'canceled' as const,
+  //   icon: CircleOff,
+  // },
 ]
 
 export const priorities = [

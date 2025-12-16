@@ -197,12 +197,6 @@ export class TasksAPI {
         case 'done':
           stats.done++
           break
-        case 'canceled':
-          stats.canceled++
-          break
-        case 'backlog':
-          stats.backlog++
-          break
       }
 
       // Count by priority
