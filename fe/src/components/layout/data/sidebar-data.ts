@@ -16,7 +16,7 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'Monk House App',
       logo: Command,
       plan: 'Vite + ShadcnUI',
     },

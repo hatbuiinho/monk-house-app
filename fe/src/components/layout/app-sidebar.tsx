@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth-store'
+import { pb } from '@/lib/pocketbase'
 import { useLayout } from '@/context/layout-provider'
 import {
   Sidebar,
@@ -15,8 +15,7 @@ import { TeamSwitcher } from './team-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { auth } = useAuthStore()
-  const { user } = auth
+  const user = pb.authStore.record
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>

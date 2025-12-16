@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
 import { pb } from '@/lib/pocketbase'
 
 const searchSchema = z.object({
@@ -18,7 +17,6 @@ export const Route = createFileRoute('/(auth)/oauth/callback')({
 
 function OAuthCallback() {
   const navigate = useNavigate()
-  const { auth: authStore } = useAuthStore()
   const { code, redirect } = Route.useSearch()
   useEffect(() => {
     async function handleOAuthCallback() {
@@ -48,22 +46,10 @@ function OAuthCallback() {
         const data = await response.json()
 
         if (data.success && data.user && data.token) {
-          // Convert PocketBase user to the format expected by the auth store
-          const pbUser = {
-            id: data.user.id,
-            email: data.user.email,
-            role: data.user.role, // Default role
-            name: data.user.name,
-            username: data.user.username,
-            exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-          }
-
           // Set user and access token in the auth store
-          authStore.setUser(pbUser)
-          authStore.setAccessToken(data.token)
           pb.authStore.save(data.token, data.user)
 
-          toast.success(`Welcome, ${data.user.email}!`)
+          toast.success(`Welcome, ${data.user.name || data.user.email}!`)
 
           // Redirect to the dashboard
           navigate({ to: redirect ?? '/', replace: true })

@@ -124,7 +124,7 @@ class PocketBaseAuth {
 
   // Helper methods
   get currentUser() {
-    return this.pbInstance.authStore.model
+    return this.pbInstance.authStore.record
   }
 
   get isAuthenticated() {

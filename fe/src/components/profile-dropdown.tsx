@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
+import { auth } from '@/lib/pocketbase'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -17,8 +17,7 @@ import { SignOutDialog } from '@/components/sign-out-dialog'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
-  const { auth: authStore } = useAuthStore()
-  const { user } = authStore
+  const user = auth.currentUser
 
   return (
     <>
@@ -26,7 +25,14 @@ export function ProfileDropdown() {
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
             <Avatar className='h-8 w-8'>
-              <AvatarImage src='/avatars/01.png' alt='@shadcn' />
+              <AvatarImage
+                src={
+                  user
+                    ? `${import.meta.env.VITE_POCKETBASE_URL}/api/mattermost/avatar/${user.id}`
+                    : '/images/favicon.svg'
+                }
+                alt={`${user?.name || 'avatar'}`}
+              />
               <AvatarFallback>SN</AvatarFallback>
             </Avatar>
           </Button>
