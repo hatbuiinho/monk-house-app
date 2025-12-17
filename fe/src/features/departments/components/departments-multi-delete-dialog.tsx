@@ -10,10 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useDepartments } from './departments-provider'
+import { useDepartmentQuery } from '../hooks/use-department-query'
 
 export function DepartmentsMultiDeleteDialog() {
-  const { deleteDepartments } = useDepartments()
+  const { deleteDepartments } = useDepartmentQuery()
   const [isLoading, setIsLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [selectedIds, _setSelectedIds] = useState<string[]>([])

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { labels, priorities, statuses } from '../data/data'
+import { labels, statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -23,9 +23,9 @@ export function TaskCard({
   const task = row.original
   const label = labels.find((label) => label.value === task.label)
   const status = statuses.find((status) => status.value === task.status)
-  const priority = priorities.find(
-    (priority) => priority.value === task.priority
-  )
+  // const priority = priorities.find(
+  //   (priority) => priority.value === task.priority
+  // )
 
   return (
     <Card
@@ -83,14 +83,14 @@ export function TaskCard({
             </div>
           )}
 
-          {priority && (
+          {/* {priority && (
             <div className='flex items-center gap-1 text-sm'>
               {priority.icon && (
                 <priority.icon className='text-muted-foreground size-3.5' />
               )}
               <span>{priority.label}</span>
             </div>
-          )}
+          )} */}
         </div>
       </CardContent>
     </Card>

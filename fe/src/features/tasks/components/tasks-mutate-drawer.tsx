@@ -33,6 +33,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { useUserQuery } from '@/features/users/hooks/useUserQuery'
+import { statuses } from '../data/data'
 import type { Task, TaskCreate, TaskStatus, TaskUpdate } from '../data/schema'
 import { useTasks } from './tasks-provider'
 
@@ -50,6 +51,7 @@ const formSchema = z.object({
   // priority: z.string().min(1, 'Please choose a priority.'),
   assignees: z.array(z.string()),
   due_date: z.string().optional(),
+  departments: z.array(z.string()),
 })
 type TaskForm = z.infer<typeof formSchema>
 
@@ -104,13 +106,7 @@ const FormFields = ({ control, isUpdate }: FormFieldsProps) => {
                 defaultValue={field.value}
                 onValueChange={field.onChange}
                 placeholder='Select status'
-                items={[
-                  { label: 'Todo', value: 'todo' },
-                  { label: 'In Progress', value: 'in_progress' },
-                  { label: 'Done', value: 'done' },
-                  { label: 'Canceled', value: 'canceled' },
-                  { label: 'Backlog', value: 'backlog' },
-                ]}
+                items={statuses}
               />
               <FormMessage />
             </FormItem>
@@ -176,6 +172,7 @@ export function TasksMutateDrawer({
       label: '',
       assignees: [],
       due_date: '',
+      departments: [],
     },
   })
 
@@ -207,6 +204,7 @@ export function TasksMutateDrawer({
           // priority: data.priority as TaskPriority,
           assignees: data.assignees,
           due_date: dueDate,
+          departments: data.departments,
         }
         await createTask(createData)
       }

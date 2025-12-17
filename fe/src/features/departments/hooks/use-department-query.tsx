@@ -1,68 +1,28 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import useDialogState from '@/hooks/use-dialog-state'
 import { departmentsAPI } from '../api/department-api'
+import { useDepartmentsStore } from '../data/departments-store'
 import type {
-  Department,
-  DepartmentCreate,
-  DepartmentFilter,
-  DepartmentUpdate,
   DepartmentError,
+  DepartmentCreate,
+  DepartmentUpdate,
 } from '../data/schema'
 
-type DepartmentsDialogType = 'create' | 'update' | 'delete' | 'import'
-
-type DepartmentsContextType = {
-  // Dialog state
-  open: DepartmentsDialogType | null
-  setOpen: (str: DepartmentsDialogType | null) => void
-  currentRow: Department | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<Department | null>>
-
-  // Data and loading states
-  departments: Department[]
-  isLoading: boolean
-  error: Error | null
-
-  // Pagination
-  totalItems: number
-  currentPage: number
-  perPage: number
-  totalPages: number
-
-  // Actions
-  refetch: () => void
-  createDepartment: (department: DepartmentCreate) => Promise<void>
-  updateDepartment: (id: string, department: DepartmentUpdate) => Promise<void>
-  deleteDepartment: (id: string) => Promise<void>
-  deleteDepartments: (ids: string[]) => Promise<void>
-
-  // Filtering
-  filters: DepartmentFilter
-  setFilters: (filters: DepartmentFilter) => void
-  clearFilters: () => void
-}
-
-const DepartmentsContext = React.createContext<DepartmentsContextType | null>(
-  null
-)
-
-const defaultFilters: DepartmentFilter = {
-  page: 1,
-  perPage: 20,
-  sort: 'name', // Sort by name as requested
-}
-
-export function DepartmentsProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useDialogState<DepartmentsDialogType>(null)
-  const [currentRow, setCurrentRow] = useState<Department | null>(null)
-  const [filters, setFilters] = useState<DepartmentFilter>(defaultFilters)
+export const useDepartmentQuery = () => {
   const queryClient = useQueryClient()
+  const {
+    setDepartments,
+    setTotalItems,
+    setCurrentPage,
+    setPerPage,
+    setTotalPages,
+    setIsLoading,
+    setError,
+    filters,
+    setOpen,
+    setCurrentRow,
+  } = useDepartmentsStore()
 
   // Query for departments
   const {
@@ -140,7 +100,7 @@ export function DepartmentsProvider({
   // Real-time subscription
   useEffect(() => {
     const unsubscribe = departmentsAPI.subscribeToDepartments(
-      (action, department) => {
+      (action, _department) => {
         queryClient.invalidateQueries({ queryKey: ['departments'] })
 
         // Show toast for real-time updates
@@ -148,7 +108,6 @@ export function DepartmentsProvider({
           create: 'New department created',
           update: 'Department updated',
           delete: 'Department deleted',
-          department: department.id,
         }
         toast.info(actionMessages[action])
       }
@@ -174,55 +133,30 @@ export function DepartmentsProvider({
     await deleteDepartmentsMutation.mutateAsync(ids)
   }
 
-  const clearFilters = useCallback(() => {
-    setFilters(defaultFilters)
-  }, [])
+  // Update Zustand store with the latest data
+  useEffect(() => {
+    if (departmentsData) {
+      setDepartments(departmentsData.items)
+      setTotalItems(departmentsData.totalItems)
+      setCurrentPage(departmentsData.page)
+      setPerPage(departmentsData.perPage)
+      setTotalPages(departmentsData.totalPages)
+    }
+  }, [departmentsData])
 
-  const contextValue: DepartmentsContextType = {
-    // Dialog state
-    open,
-    setOpen,
-    currentRow,
-    setCurrentRow,
+  useEffect(() => {
+    setIsLoading(isLoading)
+    setError(error as Error | null)
+  }, [isLoading, error])
 
-    // Data and loading states
+  return {
     departments: departmentsData?.items || [],
     isLoading,
-    error: error as Error | null,
-
-    // Pagination
-    totalItems: departmentsData?.totalItems || 0,
-    currentPage: departmentsData?.page || 1,
-    perPage: departmentsData?.perPage || 20,
-    totalPages: departmentsData?.totalPages || 1,
-
-    // Actions
-    refetch,
+    error,
     createDepartment,
     updateDepartment,
     deleteDepartment,
     deleteDepartments,
-
-    // Filtering
-    filters,
-    setFilters,
-    clearFilters,
+    refetch,
   }
-
-  return (
-    <DepartmentsContext.Provider value={contextValue}>
-      {children}
-    </DepartmentsContext.Provider>
-  )
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useDepartments = () => {
-  const departmentsContext = React.useContext(DepartmentsContext)
-
-  if (!departmentsContext) {
-    throw new Error('useDepartments has to be used within <DepartmentsContext>')
-  }
-
-  return departmentsContext
 }

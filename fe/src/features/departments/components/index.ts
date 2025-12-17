@@ -1,7 +1,6 @@
 export * from './departments-dialogs'
 export * from './departments-mutate-drawer'
 export * from './departments-primary-buttons'
-export * from './departments-provider'
 export * from './department-card-grid'
 export * from './department-detail-dialog'
 export * from './data-table-row-actions'

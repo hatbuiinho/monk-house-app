@@ -34,7 +34,7 @@ import type {
   DepartmentCreate,
   DepartmentUpdate,
 } from '../data/schema'
-import { useDepartments } from './departments-provider'
+import { useDepartmentQuery } from '../hooks/use-department-query'
 
 type DepartmentMutateDrawerProps = {
   open: boolean
@@ -91,7 +91,7 @@ export function DepartmentsMutateDrawer({
 }: DepartmentMutateDrawerProps) {
   const isUpdate = !!currentRow
   const isMobile = useIsMobile()
-  const { createDepartment, updateDepartment, isLoading } = useDepartments()
+  const { createDepartment, updateDepartment, isLoading } = useDepartmentQuery()
 
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(formSchema),

@@ -1,9 +1,10 @@
+import { useDepartmentsStore } from '../data/departments-store'
+import { useDepartmentQuery } from '../hooks/use-department-query'
 import { DepartmentsMutateDrawer } from './departments-mutate-drawer'
-import { useDepartments } from './departments-provider'
 
 export function DepartmentsDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow, deleteDepartment } =
-    useDepartments()
+  const { deleteDepartment } = useDepartmentQuery()
+  const { open, setOpen, currentRow, setCurrentRow } = useDepartmentsStore()
 
   const handleDelete = async () => {
     if (currentRow) {

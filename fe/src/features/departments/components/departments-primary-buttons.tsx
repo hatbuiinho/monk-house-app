@@ -1,9 +1,9 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useDepartments } from './departments-provider'
+import { useDepartmentsStore } from '../data/departments-store'
 
 export function DepartmentsPrimaryButtons() {
-  const { setOpen } = useDepartments()
+  const { setOpen } = useDepartmentsStore()
 
   return (
     <div className='flex items-center gap-2'>

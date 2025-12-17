@@ -18,6 +18,7 @@ export const taskSchema = z.object({
   // priority: taskPriorityEnum,
   label: z.string().optional(),
   assignees: z.array(z.string()),
+  departments: z.array(z.string()).optional(),
   due_date: z.string().optional(),
   created: z.string().optional(),
   updated: z.string().optional(),

@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { useDepartments } from './departments-provider'
+import { useDepartmentQuery } from '../hooks/use-department-query'
 
 type DataTableBulkActionsProps<TData> = {
   table: Table<TData>
@@ -21,7 +21,7 @@ type DataTableBulkActionsProps<TData> = {
 export function DataTableBulkActions<TData>({
   table,
 }: DataTableBulkActionsProps<TData>) {
-  const { deleteDepartments } = useDepartments()
+  const { deleteDepartments } = useDepartmentQuery()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 

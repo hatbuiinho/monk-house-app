@@ -11,8 +11,8 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useDepartmentsStore } from '../data/departments-store'
 import { departmentSchema } from '../data/schema'
-import { useDepartments } from "./departments-provider"
 
 type DataTableRowActionsProps<TData> = {
   row: Row<TData>
@@ -23,7 +23,7 @@ export function DataTableRowActions<TData>({
 }: DataTableRowActionsProps<TData>) {
   const department = departmentSchema.parse(row.original)
 
-  const { setOpen, setCurrentRow } = useDepartments()
+  const { setOpen, setCurrentRow } = useDepartmentsStore()
   const [openMenu, setOpenMenu] = useState(false)
 
   return (

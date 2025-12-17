@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { departmentsAPI } from '../api/department-api'
 import { type Department } from '../data/schema'
-import { useDepartments } from './departments-provider'
+import { useDepartmentQuery } from '../hooks/use-department-query'
 
 // Inline debounce function to avoid import issues
 function useDebounce<T>(value: T, delay: number): T {
@@ -46,10 +46,10 @@ type DepartmentCardGridProps = {
 export function DepartmentCardGrid({
   onDepartmentClick,
 }: DepartmentCardGridProps) {
-  const { departments: initialDepartments } = useDepartments()
+  const { departments: initialDepartments } = useDepartmentQuery()
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
   // Use useQuery for data fetching with proper caching and state management
