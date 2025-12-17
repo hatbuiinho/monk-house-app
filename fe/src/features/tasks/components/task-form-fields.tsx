@@ -1,16 +1,16 @@
 import { type Control } from 'react-hook-form'
 import {
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { useUserQuery } from '@/features/users/hooks/useUserQuery'
+import { useDepartmentQuery } from '@/features/departments/hooks/use-department-query'
 import { statuses } from '../data/data'
 import type { TaskForm } from '../data/schema'
 
@@ -21,7 +21,8 @@ interface FormFieldsProps {
 
 // Common form fields component - moved outside to prevent recreation on each render
 const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
-  const { users, isLoading } = useUserQuery()
+  //   const { users, isLoading } = useUserQuery()
+  const { departments, isLoading } = useDepartmentQuery()
   return (
     <>
       <FormField
@@ -72,7 +73,7 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
           )}
         />
       )}
-      <FormField
+      {/* <FormField
         control={control}
         name='assignees'
         render={({ field }) => (
@@ -88,6 +89,30 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
                 onValueChange={field.onChange}
                 placeholder={
                   isLoading ? 'Loading users...' : 'Select assignees'
+                }
+                disabled={isLoading}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      /> */}
+      <FormField
+        control={control}
+        name='departments'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Departments</FormLabel>
+            <FormControl>
+              <MultiSelect
+                options={departments.map((department) => ({
+                  label: `${department.name} ${department.code}`,
+                  value: department.id,
+                }))}
+                value={field.value}
+                onValueChange={field.onChange}
+                placeholder={
+                  isLoading ? 'Loading departments...' : 'Select departments'
                 }
                 disabled={isLoading}
               />
