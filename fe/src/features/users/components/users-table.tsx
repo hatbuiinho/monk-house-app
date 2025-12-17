@@ -23,10 +23,10 @@ import {
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import { roles } from '../data/data'
+import { useUserQuery } from '../hooks/useUserQuery'
 // import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
-import { useUsers } from './users-provider'
 
 type DataTableProps = {
   // data: User[]
@@ -39,11 +39,7 @@ export function UsersTable({ search, navigate }: DataTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const {
-    users,
-    // isLoading,
-    // error
-  } = useUsers()
+  const { users } = useUserQuery()
 
   // Local state management for table (uncomment to use local-only state, not synced with URL)
   // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
@@ -71,7 +67,7 @@ export function UsersTable({ search, navigate }: DataTableProps) {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: users,
+    data: users || [],
     columns,
     state: {
       sorting,
@@ -106,6 +102,7 @@ export function UsersTable({ search, navigate }: DataTableProps) {
       )}
     >
       <DataTableToolbar
+        navigate={navigate}
         table={table}
         searchPlaceholder='Filter users...'
         searchKey='username'

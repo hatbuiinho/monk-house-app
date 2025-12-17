@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
-import { labels, priorities, statuses } from '../data/data'
+import { statuses } from '../data/data'
 import { type Task } from '../data/schema'
 
 type TaskDetailDialogProps = {
@@ -23,11 +23,11 @@ export function TaskDetailDialog({
 }: TaskDetailDialogProps) {
   if (!task) return null
 
-  const label = labels.find((label) => label.value === task.label)
+  // const label = labels.find((label) => label.value === task.label)
   const status = statuses.find((status) => status.value === task.status)
-  const priority = priorities.find(
-    (priority) => priority.value === task.priority
-  )
+  // const priority = priorities.find(
+  //   (priority) => priority.value === task.priority
+  // )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,15 +64,15 @@ export function TaskDetailDialog({
           <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
             {/* Labels */}
 
-            {label ? (
+            {/* {label ? (
               <Badge variant='outline'>{label.label}</Badge>
             ) : (
               <span className='text-muted-foreground text-sm'>No label</span>
-            )}
+            )} */}
 
             {/* Priority */}
 
-            {priority ? (
+            {/* {priority ? (
               <div className='flex items-center gap-2'>
                 {priority.icon && (
                   <priority.icon className='text-muted-foreground h-4 w-4' />
@@ -81,7 +81,7 @@ export function TaskDetailDialog({
               </div>
             ) : (
               <span className='text-muted-foreground text-sm'>No priority</span>
-            )}
+            )} */}
           </div>
 
           {/* Task Description */}
@@ -104,7 +104,7 @@ export function TaskDetailDialog({
           </Card>
 
           {/* Task Assignee and Due Date */}
-          {(task.assignee || task.due_date || task.created) && (
+          {(task.assignees || task.due_date || task.created) && (
             <Card>
               <CardHeader className='pb-3'>
                 <CardTitle className='text-sm font-medium'>
@@ -112,21 +112,22 @@ export function TaskDetailDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-3'>
-                {task.assignee && (
-                  <div className='flex items-center gap-2'>
-                    <span className='text-muted-foreground text-sm font-medium'>
-                      Assignee:
-                    </span>
-                    <span className='text-sm'>{task.assignee}</span>
-                  </div>
-                )}
+                {task.assignees.length &&
+                  task.assignees.map((assignee) => (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-muted-foreground text-sm font-medium'>
+                        Assignee:
+                      </span>
+                      <span className='text-sm'>{assignee}</span>
+                    </div>
+                  ))}
                 {task.due_date && (
                   <div className='flex items-center gap-2'>
                     <span className='text-muted-foreground text-sm font-medium'>
                       Due Date:
                     </span>
                     <span className='text-sm'>
-                      {new Date(task.due_date).toLocaleDateString()}
+                      {new Date(task.due_date).toLocaleString()}
                     </span>
                   </div>
                 )}

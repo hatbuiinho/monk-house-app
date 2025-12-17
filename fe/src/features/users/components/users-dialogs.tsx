@@ -1,7 +1,7 @@
+import { useUsers } from '../data/users-store'
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
-import { useUsers } from './users-provider'
 
 export function UsersDialogs() {
   const { open, setOpen, currentRow, setCurrentRow } = useUsers()
@@ -10,13 +10,13 @@ export function UsersDialogs() {
       <UsersActionDialog
         key='user-add'
         open={open === 'add'}
-        onOpenChange={() => setOpen('add')}
+        onOpenChange={() => setOpen(null)}
       />
 
       <UsersInviteDialog
         key='user-invite'
         open={open === 'invite'}
-        onOpenChange={() => setOpen('invite')}
+        onOpenChange={() => setOpen(null)}
       />
 
       {currentRow && (

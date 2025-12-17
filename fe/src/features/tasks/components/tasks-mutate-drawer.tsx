@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { MultiSelect } from '@/components/ui/multi-select'
 import {
   Sheet,
   SheetContent,
@@ -30,14 +30,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
-import type {
-  TaskPriority,
-  TaskStatus,
-  Task,
-  TaskCreate,
-  TaskUpdate,
-} from '../data/schema'
+import { useUserQuery } from '@/features/users/hooks/useUserQuery'
+import type { Task, TaskCreate, TaskStatus, TaskUpdate } from '../data/schema'
 import { useTasks } from './tasks-provider'
 
 type TaskMutateDrawerProps = {
@@ -51,151 +47,116 @@ const formSchema = z.object({
   description: z.string().optional(),
   status: z.string().min(1, 'Please select a status.'),
   label: z.string().optional(),
-  priority: z.string().min(1, 'Please choose a priority.'),
-  assignee: z.string().optional(),
+  // priority: z.string().min(1, 'Please choose a priority.'),
+  assignees: z.array(z.string()),
   due_date: z.string().optional(),
 })
 type TaskForm = z.infer<typeof formSchema>
 
 interface FormFieldsProps {
   control: Control<TaskForm>
+  isUpdate: boolean
 }
 
 // Common form fields component - moved outside to prevent recreation on each render
-const FormFields = ({ control }: FormFieldsProps) => (
-  <>
-    <FormField
-      control={control}
-      name='title'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Title</FormLabel>
-          <FormControl>
-            <Input {...field} placeholder='Enter a title' />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
+const FormFields = ({ control, isUpdate }: FormFieldsProps) => {
+  const { users, isLoading } = useUserQuery()
+  return (
+    <>
+      <FormField
+        control={control}
+        name='title'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Title</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder='Enter a title' />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name='description'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description</FormLabel>
+            <FormControl>
+              <Textarea
+                rows={4}
+                {...field}
+                placeholder='Enter a description (optional)'
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      {isUpdate && (
+        <FormField
+          control={control}
+          name='status'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <SelectDropdown
+                defaultValue={field.value}
+                onValueChange={field.onChange}
+                placeholder='Select status'
+                items={[
+                  { label: 'Todo', value: 'todo' },
+                  { label: 'In Progress', value: 'in_progress' },
+                  { label: 'Done', value: 'done' },
+                  { label: 'Canceled', value: 'canceled' },
+                  { label: 'Backlog', value: 'backlog' },
+                ]}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       )}
-    />
-    <FormField
-      control={control}
-      name='description'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Description</FormLabel>
-          <FormControl>
-            <Input {...field} placeholder='Enter a description (optional)' />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    <FormField
-      control={control}
-      name='status'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Status</FormLabel>
-          <SelectDropdown
-            defaultValue={field.value}
-            onValueChange={field.onChange}
-            placeholder='Select status'
-            items={[
-              { label: 'Todo', value: 'todo' },
-              { label: 'In Progress', value: 'in_progress' },
-              { label: 'Done', value: 'done' },
-              { label: 'Canceled', value: 'canceled' },
-              { label: 'Backlog', value: 'backlog' },
-            ]}
-          />
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    <FormField
-      control={control}
-      name='label'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Label</FormLabel>
-          <SelectDropdown
-            defaultValue={field.value}
-            onValueChange={field.onChange}
-            placeholder='Select label (optional)'
-            items={[
-              { label: 'Bug', value: 'bug' },
-              { label: 'Feature', value: 'feature' },
-              { label: 'Documentation', value: 'documentation' },
-            ]}
-          />
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    <FormField
-      control={control}
-      name='priority'
-      render={({ field }) => (
-        <FormItem className='relative'>
-          <FormLabel>Priority</FormLabel>
-          <FormControl>
-            <RadioGroup
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-              className='flex flex-col space-y-1'
-            >
-              <FormItem className='flex items-center'>
-                <FormControl>
-                  <RadioGroupItem value='high' />
-                </FormControl>
-                <FormLabel className='font-normal'>High</FormLabel>
-              </FormItem>
-              <FormItem className='flex items-center'>
-                <FormControl>
-                  <RadioGroupItem value='medium' />
-                </FormControl>
-                <FormLabel className='font-normal'>Medium</FormLabel>
-              </FormItem>
-              <FormItem className='flex items-center'>
-                <FormControl>
-                  <RadioGroupItem value='low' />
-                </FormControl>
-                <FormLabel className='font-normal'>Low</FormLabel>
-              </FormItem>
-            </RadioGroup>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    <FormField
-      control={control}
-      name='assignee'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Assignee</FormLabel>
-          <FormControl>
-            <Input {...field} placeholder='Enter assignee name (optional)' />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-    {/* <FormField
-      control={control}
-      name='due_date'
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Due Date</FormLabel>
-          <FormControl>
-            <Input {...field} type='datetime-local' />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    /> */}
-  </>
-)
+      <FormField
+        control={control}
+        name='assignees'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Assignee</FormLabel>
+            <FormControl>
+              <MultiSelect
+                options={users.map((user) => ({
+                  label: `${user.name} ${user.username}`,
+                  value: user.id,
+                }))}
+                value={field.value}
+                onValueChange={field.onChange}
+                placeholder={
+                  isLoading ? 'Loading users...' : 'Select assignees'
+                }
+                disabled={isLoading}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name='due_date'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Due Date</FormLabel>
+            <FormControl>
+              <Input {...field} type='datetime-local' />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  )
+}
 
 export function TasksMutateDrawer({
   open,
@@ -213,14 +174,17 @@ export function TasksMutateDrawer({
       description: '',
       status: 'todo',
       label: '',
-      priority: 'medium',
-      assignee: '',
+      assignees: [],
       due_date: '',
     },
   })
 
   const onSubmit = async (data: TaskForm) => {
     try {
+      const dueDate = data.due_date
+        ? new Date(data.due_date).toISOString()
+        : undefined
+
       if (isUpdate && currentRow) {
         // Prepare update data
         const updateData: TaskUpdate = {
@@ -228,9 +192,9 @@ export function TasksMutateDrawer({
           description: data.description,
           status: data.status as TaskStatus,
           label: data.label,
-          priority: data.priority as TaskPriority,
-          assignee: data.assignee,
-          due_date: data.due_date,
+          // priority: data.priority as TaskPriority,
+          assignees: data.assignees,
+          due_date: dueDate,
         }
         await updateTask(currentRow.id, updateData)
       } else {
@@ -240,9 +204,9 @@ export function TasksMutateDrawer({
           description: data.description,
           status: data.status as TaskStatus,
           label: data.label,
-          priority: data.priority as TaskPriority,
-          assignee: data.assignee,
-          due_date: data.due_date,
+          // priority: data.priority as TaskPriority,
+          assignees: data.assignees,
+          due_date: dueDate,
         }
         await createTask(createData)
       }
@@ -287,7 +251,7 @@ export function TasksMutateDrawer({
               onSubmit={form.handleSubmit(onSubmit)}
               className='flex-1 space-y-6 overflow-y-auto p-2'
             >
-              <FormFields control={form.control} />
+              <FormFields isUpdate={isUpdate} control={form.control} />
             </form>
           </Form>
           <SheetFooter className='gap-2'>
@@ -329,7 +293,7 @@ export function TasksMutateDrawer({
             onSubmit={form.handleSubmit(onSubmit)}
             className='flex-1 space-y-6 overflow-y-auto px-4'
           >
-            <FormFields control={form.control} />
+            <FormFields isUpdate={isUpdate} control={form.control} />
           </form>
         </Form>
         <DialogFooter className='gap-2'>

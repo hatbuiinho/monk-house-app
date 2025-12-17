@@ -1,92 +1,25 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import useDialogState from '@/hooks/use-dialog-state'
-import type { User, UserStatus, UserRole, UserError } from '../data/schema'
+import type { UserError, UserStatus, UserRole } from '../data/schema'
 import { usersAPI } from '../data/users'
+import { useUsersStore } from '../data/users-store'
 
-type UsersDialogType = 'invite' | 'add' | 'edit' | 'delete'
-
-type UsersFilter = {
-  page?: number
-  perPage?: number
-  sort?: string
-  status?: UserStatus
-  role?: UserRole
-  search?: string
-}
-
-type UsersContextType = {
-  // Dialog state
-  open: UsersDialogType | null
-  setOpen: (str: UsersDialogType | null) => void
-  currentRow: User | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<User | null>>
-
-  // Data and loading states
-  users: User[]
-  isLoading: boolean
-  error: Error | null
-
-  // Pagination
-  totalItems: number
-  currentPage: number
-  perPage: number
-  totalPages: number
-
-  // Actions
-  refetch: () => void
-  createUser: (user: {
-    name: string
-    username: string
-    email: string
-    phoneNumber: string
-    status: UserStatus
-    role: UserRole
-  }) => Promise<void>
-  updateUser: (
-    id: string,
-    user: Partial<{
-      name: string
-      username: string
-      email: string
-      phoneNumber: string
-      status: UserStatus
-      role: UserRole
-    }>
-  ) => Promise<void>
-  deleteUser: (id: string) => Promise<void>
-  deleteUsers: (ids: string[]) => Promise<void>
-
-  // Filtering
-  filters: UsersFilter
-  setFilters: (filters: UsersFilter) => void
-  clearFilters: () => void
-
-  // Statistics
-  stats:
-    | {
-        total: number
-        by_status: Record<UserStatus, number>
-        by_role: Record<UserRole, number>
-      }
-    | undefined
-  refetchStats: () => void
-}
-
-const UsersContext = React.createContext<UsersContextType | null>(null)
-
-const defaultFilters: UsersFilter = {
-  page: 1,
-  perPage: 20,
-  sort: '-created',
-}
-
-export function UsersProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useDialogState<UsersDialogType>(null)
-  const [currentRow, setCurrentRow] = useState<User | null>(null)
-  const [filters, setFilters] = useState<UsersFilter>(defaultFilters)
+export const useUserQuery = () => {
   const queryClient = useQueryClient()
+  const {
+    setUsers,
+    setTotalItems,
+    setCurrentPage,
+    setPerPage,
+    setTotalPages,
+    setIsLoading,
+    setError,
+    setStats,
+    filters,
+    setOpen,
+    setCurrentRow,
+  } = useUsersStore()
 
   // Query for users
   const {
@@ -101,7 +34,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  //TODO: Query for statistics
+  // Query for statistics
   const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ['users-stats'],
     queryFn: () => usersAPI.getUserStats(),
@@ -237,59 +170,36 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     await deleteUsersMutation.mutateAsync(ids)
   }
 
-  const clearFilters = useCallback(() => {
-    setFilters(defaultFilters)
-  }, [])
+  // Update Zustand store with the latest data
+  useEffect(() => {
+    if (usersData) {
+      setUsers(usersData.items)
+      setTotalItems(usersData.totalItems)
+      setCurrentPage(usersData.page)
+      setPerPage(usersData.perPage)
+      setTotalPages(usersData.totalPages)
+    }
+  }, [usersData])
 
-  const contextValue: UsersContextType = {
-    // Dialog state
-    open,
-    setOpen,
-    currentRow,
-    setCurrentRow,
+  useEffect(() => {
+    setIsLoading(isLoading)
+    setError(error as Error | null)
+  }, [isLoading, error])
 
-    // Data and loading states
+  useEffect(() => {
+    setStats(stats)
+  }, [stats])
+
+  return {
     users: usersData?.items || [],
+    stats,
     isLoading,
-    error: error as Error | null,
-
-    // Pagination
-    totalItems: usersData?.totalItems || 0,
-    currentPage: usersData?.page || 1,
-    perPage: usersData?.perPage || 20,
-    totalPages: usersData?.totalPages || 1,
-
-    // Actions
-    refetch,
+    error,
     createUser,
     updateUser,
     deleteUser,
     deleteUsers,
-
-    // Filtering
-    filters,
-    setFilters,
-    clearFilters,
-
-    // Statistics
-    stats,
+    refetch,
     refetchStats,
   }
-
-  return (
-    <UsersContext.Provider value={contextValue}>
-      {children}
-    </UsersContext.Provider>
-  )
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useUsers = () => {
-  const usersContext = React.useContext(UsersContext)
-
-  if (!usersContext) {
-    throw new Error('useUsers has to be used within <UsersContext>')
-  }
-
-  return usersContext
 }

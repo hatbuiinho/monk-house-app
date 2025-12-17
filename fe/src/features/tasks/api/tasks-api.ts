@@ -6,7 +6,7 @@ import {
   type TaskFilter,
   type TaskStats,
   type TaskStatus,
-  type TaskPriority,
+  // type TaskPriority,
 } from '../data/schema'
 
 // Interface for PocketBase record data
@@ -18,7 +18,7 @@ interface PocketBaseRecord {
     status?: string
     priority?: string
     label?: string
-    assignee?: string
+    assignees?: string[]
     due_date?: string
     created?: string
     updated?: string
@@ -28,7 +28,7 @@ interface PocketBaseRecord {
   status?: string
   priority?: string
   label?: string
-  assignee?: string
+  assignees?: string[]
   due_date?: string
   created?: string
   updated?: string
@@ -48,9 +48,9 @@ export class TasksAPI {
       title: data.title || '',
       description: data.description || '',
       status: (data.status as TaskStatus) || 'todo',
-      priority: (data.priority as TaskPriority) || 'medium',
+      // priority: (data.priority as TaskPriority) || 'medium',
       label: data.label || '',
-      assignee: data.assignee || '',
+      assignees: data.assignees || [],
       due_date: data.due_date || '',
       created: data.created || record.created || '',
       updated: data.updated || record.updated || '',
@@ -200,17 +200,17 @@ export class TasksAPI {
       }
 
       // Count by priority
-      switch (task.priority) {
-        case 'low':
-          stats.by_priority.low++
-          break
-        case 'medium':
-          stats.by_priority.medium++
-          break
-        case 'high':
-          stats.by_priority.high++
-          break
-      }
+      // switch (task.priority) {
+      //   case 'low':
+      //     stats.by_priority.low++
+      //     break
+      //   case 'medium':
+      //     stats.by_priority.medium++
+      //     break
+      //   case 'high':
+      //     stats.by_priority.high++
+      //     break
+      // }
     })
 
     return stats
