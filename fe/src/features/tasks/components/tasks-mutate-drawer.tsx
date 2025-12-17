@@ -1,5 +1,4 @@
-import { z } from 'zod'
-import { useForm, type Control } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
@@ -12,16 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { MultiSelect } from '@/components/ui/multi-select'
+import { Form } from '@/components/ui/form'
 import {
   Sheet,
   SheetContent,
@@ -30,128 +20,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Textarea } from '@/components/ui/textarea'
-import { SelectDropdown } from '@/components/select-dropdown'
-import { useUserQuery } from '@/features/users/hooks/useUserQuery'
-import { statuses } from '../data/data'
-import type { Task, TaskCreate, TaskStatus, TaskUpdate } from '../data/schema'
+import {
+  formSchema,
+  type Task,
+  type TaskCreate,
+  type TaskForm,
+  type TaskStatus,
+  type TaskUpdate,
+} from '../data/schema'
+import TaskFormFields from './task-form-fields'
 import { useTasks } from './tasks-provider'
 
 type TaskMutateDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: Task
-}
-
-const formSchema = z.object({
-  title: z.string().min(1, 'Title is required.'),
-  description: z.string().optional(),
-  status: z.string().min(1, 'Please select a status.'),
-  label: z.string().optional(),
-  // priority: z.string().min(1, 'Please choose a priority.'),
-  assignees: z.array(z.string()),
-  due_date: z.string().optional(),
-  departments: z.array(z.string()),
-})
-type TaskForm = z.infer<typeof formSchema>
-
-interface FormFieldsProps {
-  control: Control<TaskForm>
-  isUpdate: boolean
-}
-
-// Common form fields component - moved outside to prevent recreation on each render
-const FormFields = ({ control, isUpdate }: FormFieldsProps) => {
-  const { users, isLoading } = useUserQuery()
-  return (
-    <>
-      <FormField
-        control={control}
-        name='title'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Title</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder='Enter a title' />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={control}
-        name='description'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Description</FormLabel>
-            <FormControl>
-              <Textarea
-                rows={4}
-                {...field}
-                placeholder='Enter a description (optional)'
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      {isUpdate && (
-        <FormField
-          control={control}
-          name='status'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <SelectDropdown
-                defaultValue={field.value}
-                onValueChange={field.onChange}
-                placeholder='Select status'
-                items={statuses}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-      <FormField
-        control={control}
-        name='assignees'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Assignee</FormLabel>
-            <FormControl>
-              <MultiSelect
-                options={users.map((user) => ({
-                  label: `${user.name} ${user.username}`,
-                  value: user.id,
-                }))}
-                value={field.value}
-                onValueChange={field.onChange}
-                placeholder={
-                  isLoading ? 'Loading users...' : 'Select assignees'
-                }
-                disabled={isLoading}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={control}
-        name='due_date'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Due Date</FormLabel>
-            <FormControl>
-              <Input {...field} type='datetime-local' />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
-  )
 }
 
 export function TasksMutateDrawer({
@@ -249,7 +132,7 @@ export function TasksMutateDrawer({
               onSubmit={form.handleSubmit(onSubmit)}
               className='flex-1 space-y-6 overflow-y-auto p-2'
             >
-              <FormFields isUpdate={isUpdate} control={form.control} />
+              <TaskFormFields isUpdate={isUpdate} control={form.control} />
             </form>
           </Form>
           <SheetFooter className='gap-2'>
@@ -291,7 +174,7 @@ export function TasksMutateDrawer({
             onSubmit={form.handleSubmit(onSubmit)}
             className='flex-1 space-y-6 overflow-y-auto px-4'
           >
-            <FormFields isUpdate={isUpdate} control={form.control} />
+            <TaskFormFields isUpdate={isUpdate} control={form.control} />
           </form>
         </Form>
         <DialogFooter className='gap-2'>

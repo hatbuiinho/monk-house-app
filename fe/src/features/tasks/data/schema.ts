@@ -47,6 +47,17 @@ export const taskFilterSchema = z.object({
   order: z.enum(['asc', 'desc']).optional(),
 })
 
+export const formSchema = z.object({
+  title: z.string().min(1, 'Title is required.'),
+  description: z.string().optional(),
+  status: z.string().min(1, 'Please select a status.'),
+  label: z.string().optional(),
+  // priority: z.string().min(1, 'Please choose a priority.'),
+  assignees: z.array(z.string()),
+  due_date: z.string().optional(),
+  departments: z.array(z.string()),
+})
+
 // Task Statistics Schema
 export interface TaskStats {
   total: number
@@ -72,3 +83,4 @@ export type TaskUpdate = z.infer<typeof taskUpdateSchema>
 export type TaskFilter = z.infer<typeof taskFilterSchema>
 export type TaskStatus = z.infer<typeof taskStatusEnum>
 export type TaskPriority = z.infer<typeof taskPriorityEnum>
+export type TaskForm = z.infer<typeof formSchema>
