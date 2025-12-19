@@ -28,8 +28,8 @@ import {
   type TaskStatus,
   type TaskUpdate,
 } from '../data/schema'
+import { useTaskQuery } from '../hooks/useTaskQuery'
 import TaskFormFields from './task-form-fields'
-import { useTasks } from './tasks-provider'
 
 type TaskMutateDrawerProps = {
   open: boolean
@@ -44,7 +44,8 @@ export function TasksMutateDrawer({
 }: TaskMutateDrawerProps) {
   const isUpdate = !!currentRow
   const isMobile = useIsMobile()
-  const { createTask, updateTask, isLoading } = useTasks()
+  const { createTask, updateTask } = useTaskQuery()
+  const isLoading = false
 
   const form = useForm<TaskForm>({
     resolver: zodResolver(formSchema),

@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
 } from '@radix-ui/react-icons'
-import { useQuery } from '@tanstack/react-query'
-import { Search, Loader2 } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
 import { cn, getPageNumbers } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { departmentsAPI } from '../api/department-api'
+import { useDepartmentsStore } from '../data/departments-store'
 import { type Department } from '../data/schema'
 import { useDepartmentQuery } from '../hooks/use-department-query'
 
@@ -46,77 +45,83 @@ type DepartmentCardGridProps = {
 export function DepartmentCardGrid({
   onDepartmentClick,
 }: DepartmentCardGridProps) {
-  const { departments: initialDepartments } = useDepartmentQuery()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  useDepartmentQuery()
+  const {
+    departments: initialDepartments,
+    error,
+    isLoading,
+    setFilters,
+    searchTerm,
+    setSearchTerm,
+
+    setPerPage,
+    perPage,
+    setCurrentPage,
+    currentPage,
+  } = useDepartmentsStore()
+  // const [page, setPage] = useState(1)
+  // const [pageSize, setPageSize] = useState(10)
+
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
-  // Use useQuery for data fetching with proper caching and state management
-  const {
-    data: searchResults,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery<{
-    items: Department[]
-    totalItems: number
-    totalPages: number
-  }>({
-    queryKey: ['departments', 'search', debouncedSearchTerm, page, pageSize],
-    queryFn: async () => {
-      if (!debouncedSearchTerm.trim()) {
-        // For initial load or when search is cleared, get paginated departments
-        const result = await departmentsAPI.getDepartments({
-          page: page,
-          perPage: pageSize,
-        })
-        return result
-      }
+  useEffect(() => {
+    setFilters({
+      page: currentPage,
+      perPage,
+      name: debouncedSearchTerm,
+      code: debouncedSearchTerm,
+    })
+  }, [debouncedSearchTerm, currentPage, perPage])
 
-      // Search using PocketBase API
-      const result = await departmentsAPI.getDepartments({
-        page: page,
-        perPage: pageSize,
-        name: debouncedSearchTerm,
-        code: debouncedSearchTerm,
-      })
-      return result
-    },
-    enabled: false, // We'll manually trigger refetch
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  // Use useQuery for data fetching with proper caching and state management
+
+  // const {
+  //   data: searchResults,
+  //   isLoading,
+  //   isError,
+  //   error,
+  //   refetch,
+  // } = useQuery<{
+  //   items: Department[]
+  //   totalItems: number
+  //   totalPages: number
+  // }>({
+  //   queryKey: ['departments', 'search', debouncedSearchTerm, page, pageSize],
+  //   queryFn: async () => {
+  //     if (!debouncedSearchTerm.trim()) {
+  //       // For initial load or when search is cleared, get paginated departments
+  //       const result = await departmentsAPI.getDepartments({
+  //         page: page,
+  //         perPage: pageSize,
+  //       })
+  //       return result
+  //     }
+
+  //     // Search using PocketBase API
+  //     const result = await departmentsAPI.getDepartments({
+  //       page: page,
+  //       perPage: pageSize,
+  //       name: debouncedSearchTerm,
+  //       code: debouncedSearchTerm,
+  //     })
+  //     return result
+  //   },
+  //   enabled: false, // We'll manually trigger refetch
+  //   staleTime: 5 * 60 * 1000, // 5 minutes
+  // })
 
   // Display data - use search results if available, otherwise use initial departments
-  const displayData = searchResults?.items || initialDepartments || []
-  const totalItems =
-    searchResults?.totalItems || initialDepartments?.length || 0
-  const totalPages =
-    searchResults?.totalPages || Math.ceil(totalItems / pageSize) || 1
+  const displayData = initialDepartments || []
+  const totalItems = initialDepartments?.length || 0
+  const totalPages = Math.ceil(totalItems / perPage) || 1
 
   // Auto-refetch when debounced search term, page, or pageSize changes
-  useEffect(() => {
-    refetch()
-  }, [debouncedSearchTerm, page, pageSize, refetch])
-
-  const handleSearch = () => {
-    // Reset to first page when searching
-    setPage(1)
-    refetch()
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
-  }
 
   const goToPage = (newPage: number) => {
-    setPage(Math.max(1, Math.min(newPage, totalPages)))
+    setCurrentPage(Math.max(1, Math.min(newPage, totalPages)))
   }
 
-  const pageNumbers = getPageNumbers(page, totalPages)
+  const pageNumbers = getPageNumbers(currentPage, totalPages)
 
   return (
     <div
@@ -132,19 +137,20 @@ export function DepartmentCardGrid({
           <Input
             placeholder='Search by name or code...'
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+            }}
             className='pl-10'
           />
         </div>
-        {isError && (
+        {!!error && (
           <div className='text-sm text-red-500'>
             {error instanceof Error
               ? error.message
               : 'Failed to search departments. Please try again.'}
           </div>
         )}
-        {debouncedSearchTerm.trim() && isLoading && (
+        {searchTerm.trim() && isLoading && (
           <div className='text-muted-foreground text-sm'>
             <Loader2 className='mr-2 inline h-3 w-3 animate-spin' />
             Searching departments...
@@ -207,7 +213,7 @@ export function DepartmentCardGrid({
             ))
           ) : (
             <div className='text-muted-foreground col-span-full flex h-32 items-center justify-center'>
-              {debouncedSearchTerm.trim()
+              {searchTerm.trim()
                 ? 'No results found.'
                 : 'No departments available.'}
             </div>
@@ -220,21 +226,22 @@ export function DepartmentCardGrid({
         <div className='mt-auto flex items-center justify-between overflow-clip px-2'>
           <div className='flex w-full items-center justify-between'>
             <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-              Page {page} of {totalPages}
+              Page {currentPage} of {totalPages}
             </div>
             <div className='flex items-center gap-2'>
               <Select
-                value={`${pageSize}`}
+                value={`${perPage}`}
                 onValueChange={(value) => {
-                  setPageSize(Number(value))
-                  setPage(1) // Reset to first page when changing page size
+                  setPerPage(Number(value))
+                  setCurrentPage(1)
+                  // setPage(1) // Reset to first page when changing page size
                 }}
               >
                 <SelectTrigger className='h-8 w-[70px]'>
-                  <SelectValue placeholder={pageSize} />
+                  <SelectValue placeholder={perPage} />
                 </SelectTrigger>
                 <SelectContent side='top'>
-                  {[10, 20, 30, 40, 50].map((size) => (
+                  {[20, 30, 40, 50].map((size) => (
                     <SelectItem key={size} value={`${size}`}>
                       {size}
                     </SelectItem>
@@ -249,14 +256,14 @@ export function DepartmentCardGrid({
 
           <div className='flex items-center sm:space-x-6 lg:space-x-8'>
             <div className='flex hidden w-[100px] items-center justify-center text-sm font-medium sm:flex'>
-              Page {page} of {totalPages}
+              Page {currentPage} of {totalPages}
             </div>
             <div className='flex items-center space-x-2'>
               <Button
                 variant='outline'
                 className='size-8 p-0'
                 onClick={() => goToPage(1)}
-                disabled={page === 1}
+                disabled={currentPage === 1}
               >
                 <span className='sr-only'>Go to first page</span>
                 <DoubleArrowLeftIcon className='h-4 w-4' />
@@ -264,8 +271,8 @@ export function DepartmentCardGrid({
               <Button
                 variant='outline'
                 className='size-8 p-0'
-                onClick={() => goToPage(page - 1)}
-                disabled={page === 1}
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
               >
                 <span className='sr-only'>Go to previous page</span>
                 <ChevronLeftIcon className='h-4 w-4' />
@@ -283,7 +290,9 @@ export function DepartmentCardGrid({
                     </span>
                   ) : (
                     <Button
-                      variant={page === pageNumber ? 'default' : 'outline'}
+                      variant={
+                        currentPage === pageNumber ? 'default' : 'outline'
+                      }
                       className='h-8 min-w-8 px-2'
                       onClick={() => goToPage(pageNumber as number)}
                     >
@@ -297,8 +306,8 @@ export function DepartmentCardGrid({
               <Button
                 variant='outline'
                 className='size-8 p-0'
-                onClick={() => goToPage(page + 1)}
-                disabled={page === totalPages}
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
               >
                 <span className='sr-only'>Go to next page</span>
                 <ChevronRightIcon className='h-4 w-4' />
@@ -307,7 +316,7 @@ export function DepartmentCardGrid({
                 variant='outline'
                 className='size-8 p-0'
                 onClick={() => goToPage(totalPages)}
-                disabled={page === totalPages}
+                disabled={currentPage === totalPages}
               >
                 <span className='sr-only'>Go to last page</span>
                 <DoubleArrowRightIcon className='h-4 w-4' />

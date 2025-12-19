@@ -7,18 +7,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { labels } from '../data/data'
 import { taskSchema } from '../data/schema'
-import { useTasks } from './tasks-provider'
+import { useTasksStore } from '../data/tasks-store'
 
 type DataTableRowActionsProps<TData> = {
   row: Row<TData>
@@ -29,7 +23,7 @@ export function DataTableRowActions<TData>({
 }: DataTableRowActionsProps<TData>) {
   const task = taskSchema.parse(row.original)
 
-  const { setOpen, setCurrentRow } = useTasks()
+  const { setOpen, setCurrentRow } = useTasksStore()
   const [openMenu, setOpenMenu] = useState(false)
 
   return (
@@ -58,10 +52,7 @@ export function DataTableRowActions<TData>({
         >
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>Make a copy</DropdownMenuItem>
-        <DropdownMenuItem disabled>Favorite</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuSub>
+        {/* <DropdownMenuSub>
           <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup value={task.label}>
@@ -72,7 +63,7 @@ export function DataTableRowActions<TData>({
               ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        </DropdownMenuSub> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={(e) => {

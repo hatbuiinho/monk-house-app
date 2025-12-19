@@ -1,34 +1,17 @@
+import type { RecordModel } from 'pocketbase'
 import { pb } from '@/lib/pocketbase'
 import { type User, type UserStatus, type UserRole } from './schema'
 
 // Interface for PocketBase record data
-interface PocketBaseRecord {
-  id: string
-  data?: {
-    name?: string
-    username?: string
-    email?: string
-    phoneNumber?: string
-    status?: string
-    role?: string
-    created?: string
-    updated?: string
-  }
-  name?: string
-  username?: string
-  email?: string
-  phoneNumber?: string
-  status?: string
-  role?: string
-  created?: string
-  updated?: string
-}
+// interface PocketBaseRecord extends User {
+//   data?: User
+// }
 
 export class UsersAPI {
   private collection = pb.collection('users')
 
   // Convert PocketBase record to our User type
-  private transformRecord(record: PocketBaseRecord): User {
+  private transformRecord(record: RecordModel): User {
     // Handle PocketBase record structure with proper fallbacks
     const data = record.data || record // Handle both direct record and nested data
 
@@ -39,9 +22,10 @@ export class UsersAPI {
       email: data.email || '',
       phoneNumber: data.phoneNumber || '',
       status: (data.status as UserStatus) || 'active',
-      role: (data.role as UserRole) || 'member',
+      roles: (data.roles as UserRole[]) || 'member',
       created: data.created || record.created || '',
       updated: data.updated || record.updated || '',
+      avatar_url: data.avatar_url || record.avatar_url || '',
     }
   }
 
@@ -172,41 +156,41 @@ export class UsersAPI {
     }
   }
 
-  // Get user statistics
-  async getUserStats(): Promise<{
-    total: number
-    by_status: Record<UserStatus, number>
-    by_role: Record<UserRole, number>
-  }> {
-    const result = await this.collection.getList(1, 1000, {})
-    const users = result.items.map(this.transformRecord)
+  //TODO: Get user statistics
+  // async getUserStats(): Promise<{
+  //   total: number
+  //   by_status: Record<UserStatus, number>
+  //   by_role: Record<UserRole, number>
+  // }> {
+  //   const result = await this.collection.getList(1, 1000, {})
+  //   const users = result.items.map(this.transformRecord)
 
-    const stats = {
-      total: users.length,
-      by_status: {
-        active: 0,
-        inactive: 0,
-        invited: 0,
-        suspended: 0,
-      } as Record<UserStatus, number>,
-      by_role: {
-        admin: 0,
-        member: 0,
-        group_leader: 0,
-        department_leader: 0,
-      } as Record<UserRole, number>,
-    }
+  //   const stats = {
+  //     total: users.length,
+  //     by_status: {
+  //       active: 0,
+  //       inactive: 0,
+  //       invited: 0,
+  //       suspended: 0,
+  //     } as Record<UserStatus, number>,
+  //     by_role: {
+  //       admin: 0,
+  //       member: 0,
+  //       group_leader: 0,
+  //       department_leader: 0,
+  //     } as Record<UserRole, number>,
+  //   }
 
-    users.forEach((user) => {
-      // Count by status
-      stats.by_status[user.status]++
+  //   users.forEach((user) => {
+  //     // Count by status
+  //     stats.by_status[user.status]++
 
-      // Count by role
-      stats.by_role[user.role]++
-    })
+  //     // Count by role
+  //     stats.by_role[user.role]++
+  //   })
 
-    return stats
-  }
+  //   return stats
+  // }
 }
 
 // Export a singleton instance

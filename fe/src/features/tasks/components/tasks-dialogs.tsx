@@ -1,9 +1,11 @@
+import { useTasksStore } from '../data/tasks-store'
+import { useTaskQuery } from '../hooks/useTaskQuery'
 import { TasksImportDialog } from './tasks-import-dialog'
 import { TasksMutateDrawer } from './tasks-mutate-drawer'
-import { useTasks } from './tasks-provider'
 
 export function TasksDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow, deleteTask } = useTasks()
+  const { open, setOpen, currentRow, setCurrentRow } = useTasksStore()
+  const { deleteTask } = useTaskQuery()
 
   const handleDelete = async () => {
     if (currentRow) {

@@ -273,6 +273,8 @@ interface MultiSelectProps
    * Optional, defaults to false.
    */
   closeOnSelect?: boolean
+
+  hideCaret?: boolean
 }
 
 /**
@@ -328,6 +330,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
       deduplicateOptions = false,
       resetOnDefaultValueChange = true,
       closeOnSelect = false,
+      hideCaret = false,
       ...props
     },
     ref
@@ -860,7 +863,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                               customStyle?.gradient &&
                                 'border-transparent text-white',
                               responsiveSettings.compactMode &&
-                                'px-1.5 py-0.5 text-xs',
+                                'px-1.5 py-0.5 text-sm',
                               screenSize === 'mobile' &&
                                 'max-w-[120px] truncate',
                               singleLine && 'shrink-0 whitespace-nowrap',
@@ -912,7 +915,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                                 }
                               }}
                               aria-label={`Remove ${option.label} from selection`}
-                              className='-m-0.5 ml-2 h-4 w-4 cursor-pointer rounded-sm p-0.5 hover:bg-white/20 focus:ring-1 focus:ring-white/50 focus:outline-none'
+                              className='-m-0.5 ml-2 h-4 w-4 cursor-pointer rounded-sm hover:scale-110 hover:bg-white/20 focus:ring-1 focus:ring-white/50 focus:outline-none'
                             >
                               <XCircle
                                 className={cn(
@@ -976,26 +979,32 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
                         }
                       }}
                       aria-label={`Clear all ${selectedValues.length} selected options`}
-                      className='text-muted-foreground hover:text-foreground focus:ring-ring mx-2 flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm focus:ring-2 focus:ring-offset-1 focus:outline-none'
+                      className='item-center text-muted-foreground hover:text-foreground focus:ring-ring mx-2 flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm focus:ring-2 focus:ring-offset-1 focus:outline-none'
                     >
                       <XIcon className='h-4 w-4' />
                     </div>
-                    <Separator
-                      orientation='vertical'
-                      className='flex h-full min-h-6'
-                    />
-                    <ChevronDown
-                      className='text-muted-foreground mx-2 h-4 cursor-pointer'
-                      aria-hidden='true'
-                    />
+                    {!hideCaret && (
+                      <>
+                        <Separator
+                          orientation='vertical'
+                          className='flex h-full min-h-6'
+                        />
+                        <ChevronDown
+                          className='text-muted-foreground mx-2 h-4 cursor-pointer'
+                          aria-hidden='true'
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (
                 <div className='mx-auto flex w-full items-center justify-between'>
-                  <span className='text-muted-foreground mx-3 text-sm'>
+                  <span className='text-foreground mx-3 text-sm'>
                     {placeholder}
                   </span>
-                  <ChevronDown className='text-muted-foreground mx-2 h-4 cursor-pointer' />
+                  {!hideCaret && (
+                    <ChevronDown className='text-muted-foreground mx-2 h-4 cursor-pointer' />
+                  )}
                 </div>
               )}
             </Button>

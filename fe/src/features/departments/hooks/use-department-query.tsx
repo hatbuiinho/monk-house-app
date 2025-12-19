@@ -1,27 +1,24 @@
 import { useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { departmentsAPI } from '../api/department-api'
 import { useDepartmentsStore } from '../data/departments-store'
 import type {
-  DepartmentError,
   DepartmentCreate,
+  DepartmentError,
   DepartmentUpdate,
 } from '../data/schema'
 
 export const useDepartmentQuery = () => {
-  const queryClient = useQueryClient()
   const {
     setDepartments,
     setTotalItems,
-    setCurrentPage,
-    setPerPage,
-    setTotalPages,
     setIsLoading,
     setError,
     filters,
     setOpen,
     setCurrentRow,
+    departments,
   } = useDepartmentsStore()
 
   // Query for departments
@@ -35,14 +32,18 @@ export const useDepartmentQuery = () => {
     queryFn: () => departmentsAPI.getDepartments(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    // enabled: false, // We'll manually trigger refetch
   })
+
+  // useEffect(() => {
+
+  // }, [filters, currentPage])
 
   // Create department mutation
   const createDepartmentMutation = useMutation({
     mutationFn: (department: DepartmentCreate) =>
       departmentsAPI.createDepartment(department),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] })
       toast.success('Department created successfully')
       setOpen(null)
     },
@@ -61,7 +62,6 @@ export const useDepartmentQuery = () => {
       department: DepartmentUpdate
     }) => departmentsAPI.updateDepartment(id, department),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] })
       toast.success('Department updated successfully')
       setOpen(null)
       setCurrentRow(null)
@@ -75,7 +75,6 @@ export const useDepartmentQuery = () => {
   const deleteDepartmentMutation = useMutation({
     mutationFn: (id: string) => departmentsAPI.deleteDepartment(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] })
       toast.success('Department deleted successfully')
       setOpen(null)
       setCurrentRow(null)
@@ -89,7 +88,6 @@ export const useDepartmentQuery = () => {
   const deleteDepartmentsMutation = useMutation({
     mutationFn: (ids: string[]) => departmentsAPI.deleteDepartments(ids),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['departments'] })
       toast.success('Departments deleted successfully')
     },
     onError: (error: DepartmentError) => {
@@ -97,24 +95,51 @@ export const useDepartmentQuery = () => {
     },
   })
 
+  useEffect(() => {
+    setDepartments(departmentsData?.items ?? [])
+    setTotalItems(departmentsData?.totalItems ?? 0)
+    // setPerPage(departmentsData?.perPage ?? 10)
+    // setTotalPages(departmentsData?.totalPages ?? 1)
+    setIsLoading(isLoading)
+    setError(error)
+  }, [departmentsData, isLoading, error])
+
   // Real-time subscription
   useEffect(() => {
     const unsubscribe = departmentsAPI.subscribeToDepartments(
       (action, _department) => {
-        queryClient.invalidateQueries({ queryKey: ['departments'] })
-
-        // Show toast for real-time updates
-        const actionMessages = {
-          create: 'New department created',
-          update: 'Department updated',
-          delete: 'Department deleted',
+        switch (action) {
+          case 'create':
+            if (
+              !departments.find(
+                (department) => department.id === _department.id
+              )
+            ) {
+              setTimeout(() => {
+                setDepartments([_department, ...departments])
+              }, 1000)
+            }
+            break
+          case 'update':
+            setDepartments(
+              departments.map((department) =>
+                department.id === _department.id ? _department : department
+              )
+            )
+            break
+          case 'delete':
+            setDepartments(
+              departments.filter(
+                (department) => department.id !== _department.id
+              )
+            )
+            break
         }
-        toast.info(actionMessages[action])
       }
     )
 
     return unsubscribe
-  }, [queryClient])
+  }, [])
 
   // Actions
   const createDepartment = async (department: DepartmentCreate) => {
@@ -133,26 +158,7 @@ export const useDepartmentQuery = () => {
     await deleteDepartmentsMutation.mutateAsync(ids)
   }
 
-  // Update Zustand store with the latest data
-  useEffect(() => {
-    if (departmentsData) {
-      setDepartments(departmentsData.items)
-      setTotalItems(departmentsData.totalItems)
-      setCurrentPage(departmentsData.page)
-      setPerPage(departmentsData.perPage)
-      setTotalPages(departmentsData.totalPages)
-    }
-  }, [departmentsData])
-
-  useEffect(() => {
-    setIsLoading(isLoading)
-    setError(error as Error | null)
-  }, [isLoading, error])
-
   return {
-    departments: departmentsData?.items || [],
-    isLoading,
-    error,
     createDepartment,
     updateDepartment,
     deleteDepartment,

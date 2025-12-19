@@ -15,7 +15,7 @@ export const useUserQuery = () => {
     setTotalPages,
     setIsLoading,
     setError,
-    setStats,
+    // setStats,
     filters,
     setOpen,
     setCurrentRow,
@@ -34,12 +34,12 @@ export const useUserQuery = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  // Query for statistics
-  const { data: stats, refetch: refetchStats } = useQuery({
-    queryKey: ['users-stats'],
-    queryFn: () => usersAPI.getUserStats(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  })
+  // TODO: Query for statistics
+  // const { data: stats, refetch: refetchStats } = useQuery({
+  //   queryKey: ['users-stats'],
+  //   queryFn: () => usersAPI.getUserStats(),
+  //   staleTime: 2 * 60 * 1000, // 2 minutes
+  // })
 
   // Create user mutation
   const createUserMutation = useMutation({
@@ -186,13 +186,13 @@ export const useUserQuery = () => {
     setError(error as Error | null)
   }, [isLoading, error])
 
-  useEffect(() => {
-    setStats(stats)
-  }, [stats])
+  // useEffect(() => {
+  //   setStats(stats)
+  // }, [stats])
 
   return {
     users: usersData?.items || [],
-    stats,
+    // stats,
     isLoading,
     error,
     createUser,
@@ -200,6 +200,6 @@ export const useUserQuery = () => {
     deleteUser,
     deleteUsers,
     refetch,
-    refetchStats,
+    // refetchStats,
   }
 }

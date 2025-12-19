@@ -33,6 +33,10 @@ type DepartmentsStore = {
   totalPages: number
   setTotalPages: (totalPages: number) => void
 
+  // Search
+  searchTerm: string
+  setSearchTerm: (searchTerm: string) => void
+
   // Actions
   refetch: () => void
   setRefetch: (refetch: () => void) => void
@@ -69,7 +73,9 @@ export const useDepartmentsStore = create<DepartmentsStore>((set) => ({
 
   // Data and loading states
   departments: [],
-  setDepartments: (departments) => set({ departments }),
+  setDepartments: (departments) => {
+    set({ departments })
+  },
   isLoading: false,
   setIsLoading: (isLoading) => set({ isLoading }),
   error: null,
@@ -85,6 +91,10 @@ export const useDepartmentsStore = create<DepartmentsStore>((set) => ({
   totalPages: 1,
   setTotalPages: (totalPages) => set({ totalPages }),
 
+  // Search
+  searchTerm: '',
+  setSearchTerm: (searchTerm) => set({ searchTerm }),
+
   // Actions
   refetch: () => {},
   setRefetch: (refetch) => set({ refetch }),
@@ -99,9 +109,9 @@ export const useDepartmentsStore = create<DepartmentsStore>((set) => ({
 
   // Filtering
   filters: {
-    page: 1,
-    perPage: 20,
-    sort: 'name',
+    // page: 1,
+    // perPage: 20,
+    // sort: 'name',
   },
   setFilters: (filters) => set({ filters }),
   clearFilters: () => set({ filters: { page: 1, perPage: 20, sort: 'name' } }),

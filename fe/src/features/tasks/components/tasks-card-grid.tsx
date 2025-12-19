@@ -180,11 +180,13 @@ export function TasksCardGrid({ data }: DataTableProps) {
         </TabsList>
       </Tabs>
       <DataTableBulkActions table={table} />
-      <TaskDetailDialog
-        task={selectedTask}
-        open={isDetailSheetOpen}
-        onOpenChange={setIsDetailSheetOpen}
-      />
+      {selectedTask && (
+        <TaskDetailDialog
+          task={selectedTask}
+          open={isDetailSheetOpen}
+          onOpenChange={setIsDetailSheetOpen}
+        />
+      )}
     </div>
   )
 }

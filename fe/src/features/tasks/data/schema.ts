@@ -55,7 +55,7 @@ export const formSchema = z.object({
   // priority: z.string().min(1, 'Please choose a priority.'),
   assignees: z.array(z.string()),
   due_date: z.string().optional(),
-  departments: z.array(z.string()),
+  departments: z.array(z.string()).optional(),
 })
 
 // Task Statistics Schema

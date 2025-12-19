@@ -27,7 +27,6 @@ type NavUserProps = {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const [open, setOpen] = useDialogState()
-  const avatarUrl = `${import.meta.env.VITE_POCKETBASE_URL}/api/mattermost/avatar/${user?.id}`
 
   return (
     <>
@@ -40,8 +39,8 @@ export function NavUser({ user }: NavUserProps) {
                 className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
               >
                 <Avatar className='h-8 w-8 rounded-lg'>
-                  <AvatarImage src={avatarUrl} alt={user?.name} />
-                  <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                  <AvatarImage src={user?.avatar_url} alt={user?.name} />
+                  <AvatarFallback className='rounded-lg'>PQ</AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user?.name}</span>
@@ -59,8 +58,8 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuLabel className='p-0 font-normal'>
                 <div className='flex items-center gap-2 px-1 py-1.5 text-start text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
-                    <AvatarImage src={avatarUrl} alt={user?.name} />
-                    <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                    <AvatarImage src={user?.avatar_url} alt={user?.name} />
+                    <AvatarFallback className='rounded-lg'>PQ</AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
                     <span className='truncate font-semibold'>

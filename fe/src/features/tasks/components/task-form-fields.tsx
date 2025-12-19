@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectDropdown } from '@/components/select-dropdown'
+import { useDepartmentsStore } from '@/features/departments/data/departments-store'
 import { useDepartmentQuery } from '@/features/departments/hooks/use-department-query'
 import { statuses } from '../data/data'
 import type { TaskForm } from '../data/schema'
@@ -21,8 +22,8 @@ interface FormFieldsProps {
 
 // Common form fields component - moved outside to prevent recreation on each render
 const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
-  //   const { users, isLoading } = useUserQuery()
-  const { departments, isLoading } = useDepartmentQuery()
+  useDepartmentQuery()
+  const { departments, isLoading } = useDepartmentsStore()
   return (
     <>
       <FormField

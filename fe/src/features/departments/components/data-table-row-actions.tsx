@@ -52,8 +52,6 @@ export function DataTableRowActions<TData>({
         >
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>Make a copy</DropdownMenuItem>
-        <DropdownMenuItem disabled>Favorite</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={(e) => {

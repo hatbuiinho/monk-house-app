@@ -29,6 +29,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { useDepartmentsStore } from '../data/departments-store'
 import type {
   Department,
   DepartmentCreate,
@@ -91,8 +92,8 @@ export function DepartmentsMutateDrawer({
 }: DepartmentMutateDrawerProps) {
   const isUpdate = !!currentRow
   const isMobile = useIsMobile()
-  const { createDepartment, updateDepartment, isLoading } = useDepartmentQuery()
-
+  const { createDepartment, updateDepartment } = useDepartmentQuery()
+  const { isLoading } = useDepartmentsStore()
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(formSchema),
     defaultValues: currentRow ?? {

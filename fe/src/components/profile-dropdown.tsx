@@ -26,11 +26,7 @@ export function ProfileDropdown() {
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
             <Avatar className='h-8 w-8'>
               <AvatarImage
-                src={
-                  user
-                    ? `${import.meta.env.VITE_POCKETBASE_URL}/api/mattermost/avatar/${user.id}`
-                    : '/images/favicon.svg'
-                }
+                src={user ? user.avatar_url : '/images/favicon.svg'}
                 alt={`${user?.name || 'avatar'}`}
               />
               <AvatarFallback>SN</AvatarFallback>
