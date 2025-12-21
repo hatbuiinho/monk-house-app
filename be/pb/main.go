@@ -105,6 +105,10 @@ func main() {
 			return handleOAuthExchange(c, app)
 		})
 
+		e.Router.GET("/api/mattermost/avatar/{id}", func(c *core.RequestEvent) error {
+			return handleMattermostAvartar(c)
+		})
+
 		// Health check
 		e.Router.GET("/health", func(c *core.RequestEvent) error {
 			return c.JSON(200, map[string]string{"status": "ok"})
@@ -128,6 +132,41 @@ func main() {
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func handleMattermostAvartar(c *core.RequestEvent) error {
+	userId := c.Request.PathValue("id")
+
+	// token bạn đã lưu khi OAuth (khuyến nghị lưu encrypted)
+	mmToken := os.Getenv("MATTERMOST_BOT_TOKEN")
+	// hoặc lấy từ user record nếu mỗi user có token riêng
+
+	req, err := http.NewRequest(
+		"GET",
+		fmt.Sprintf(
+			"%s/api/v4/users/%s/image",
+			os.Getenv("MATTERMOST_SERVER_URL"),
+			userId,
+		),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+mmToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	c.Response.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	c.Response.WriteHeader(resp.StatusCode)
+
+	_, err = io.Copy(c.Response, resp.Body)
+	return err
 }
 
 // Handle Mattermost OAuth2 Login
