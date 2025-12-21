@@ -186,6 +186,7 @@ export function TasksCardGrid({ data }: DataTableProps) {
       {selectedTask && (
         <TaskDetailDialog
           task={selectedTask}
+          taskId={selectedTask.id}
           open={isDetailSheetOpen}
           onOpenChange={setIsDetailSheetOpen}
         />

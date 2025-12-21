@@ -110,7 +110,13 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
                   label: `${department.name} ${department.code}`,
                   value: department.id,
                 }))}
-                value={field.value}
+                value={
+                  Array.isArray(field.value)
+                    ? field.value.map((dept) =>
+                        typeof dept === 'string' ? dept : dept.id
+                      )
+                    : []
+                }
                 onValueChange={field.onChange}
                 placeholder={
                   isLoading ? 'Loading departments...' : 'Select departments'

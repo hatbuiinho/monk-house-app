@@ -1,4 +1,7 @@
+import { type RecordModel } from 'pocketbase'
 import { pb } from '@/lib/pocketbase'
+import { type Department } from '@/features/departments/data/schema'
+import { type User } from '@/features/users/data/schema'
 import {
   type Task,
   type TaskCreate,
@@ -10,7 +13,7 @@ import {
 } from '../data/schema'
 
 // Interface for PocketBase record data
-interface PocketBaseRecord {
+export interface PocketBaseRecord {
   id: string
   data?: {
     title?: string
@@ -18,17 +21,27 @@ interface PocketBaseRecord {
     status?: string
     priority?: string
     label?: string
-    assignees?: string[]
+    assignees?: User[]
+    departments?: string[] | Department[]
     due_date?: string
     created?: string
     updated?: string
+    expand: {
+      departments: Department[]
+      assignees?: User[]
+    }
+  }
+  expand: {
+    departments: Department[]
+    assignees?: User[]
   }
   title?: string
   description?: string
   status?: string
   priority?: string
   label?: string
-  assignees?: string[]
+  assignees?: User[]
+  departments?: string[] | Department[]
   due_date?: string
   created?: string
   updated?: string
@@ -39,7 +52,7 @@ export class TasksAPI {
 
   // Convert PocketBase record to our Task type
   // Convert PocketBase record to our Task type
-  private transformRecord(record: PocketBaseRecord): Task {
+  private transformRecord(record: RecordModel): Task {
     // Handle PocketBase record structure with proper fallbacks
     const data = record.data || record // Handle both direct record and nested data
 
@@ -50,7 +63,8 @@ export class TasksAPI {
       status: (data.status as TaskStatus) || 'todo',
       // priority: (data.priority as TaskPriority) || 'medium',
       label: data.label || '',
-      assignees: data.assignees || [],
+      assignees: data.expand?.assignees || data.assignees,
+      departments: data.expand?.departments || data.assignees,
       due_date: data.due_date || '',
       created: data.created || record.created || '',
       updated: data.updated || record.updated || '',
@@ -111,7 +125,7 @@ export class TasksAPI {
 
   // Get a single task by ID
   async getTask(id: string): Promise<Task> {
-    const record = await this.collection.getOne(id)
+    const record = await this.collection.getOne(id, { expand: 'departments' })
     return this.transformRecord(record)
   }
 

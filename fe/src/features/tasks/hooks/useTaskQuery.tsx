@@ -153,7 +153,7 @@ export const useTaskQuery = () => {
       description?: string
       status: TaskStatus
       label?: string
-      assignees: string[]
+      assignees?: string[]
       due_date?: string
     }>
   ) => {

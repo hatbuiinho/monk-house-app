@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { startOfDay } from 'date-fns'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
+import { ListCheck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
 import { Button } from '@/components/ui/button'
@@ -76,11 +77,15 @@ export function DataTableToolbar<TData>({
         <div className='flex gap-x-2'>
           {onSelectModeChange && (
             <Button
-              variant={selectMode ? 'default' : 'outline'}
+              variant={selectMode ? 'outline' : 'outline'}
               size='sm'
               onClick={() => onSelectModeChange(!selectMode)}
             >
-              {selectMode ? 'Mouse' : 'Tick'}
+              {selectMode ? (
+                <X className='size-4' />
+              ) : (
+                <ListCheck className='size-4' />
+              )}
             </Button>
           )}
           <div className='hidden md:block'>

@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { type User } from '@/features/users/data/schema'
+import type { Department } from '../../../features/departments/data/schema'
 import { priorities, statuses } from './data'
 
 // Task status enum
@@ -17,8 +19,12 @@ export const taskSchema = z.object({
   status: taskStatusEnum,
   // priority: taskPriorityEnum,
   label: z.string().optional(),
-  assignees: z.array(z.string()),
-  departments: z.array(z.string()).optional(),
+  assignees: z
+    .union([z.array(z.string()), z.array(z.custom<User>())])
+    .optional(),
+  departments: z
+    .union([z.array(z.string()), z.array(z.custom<Department>())])
+    .optional(),
   due_date: z.string().optional(),
   created: z.string().optional(),
   updated: z.string().optional(),
@@ -32,7 +38,13 @@ export const taskCreateSchema = taskSchema.omit({
 })
 
 // Task update schema (all fields optional except id)
-export const taskUpdateSchema = taskCreateSchema.partial()
+export const taskUpdateSchema = taskCreateSchema
+  .omit({ assignees: true, departments: true })
+  .extend({
+    assignees: z.array(z.string()).optional(),
+    departments: z.array(z.string()).optional(),
+  })
+  .partial()
 
 // Task filter schema for queries
 export const taskFilterSchema = z.object({
@@ -55,7 +67,9 @@ export const formSchema = z.object({
   // priority: z.string().min(1, 'Please choose a priority.'),
   assignees: z.array(z.string()),
   due_date: z.string().optional(),
-  departments: z.array(z.string()).optional(),
+  departments: z
+    .union([z.array(z.string()), z.array(z.custom<Department>())])
+    .optional(),
 })
 
 // Task Statistics Schema

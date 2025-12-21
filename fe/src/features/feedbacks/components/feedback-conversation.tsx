@@ -199,9 +199,9 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
         className='flex w-full flex-none items-center gap-2'
       >
         <div className='border-input bg-card focus-within:ring-ring flex flex-1 items-center gap-2 rounded-md border px-2 py-1 focus-within:ring-1 focus-within:outline-hidden lg:gap-4'>
-          <div className='space-x-1'>
-            {/* TODO: add feature for feedback */}
-            {/* <Button
+          {/* TODO: add feature for feedback */}
+          {/* <div className='space-x-1'>
+            <Button
               size='icon'
               type='button'
               variant='ghost'
@@ -224,8 +224,8 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
               className='hidden h-8 rounded-md lg:inline-flex'
             >
               <Paperclip size={20} className='stroke-muted-foreground' />
-            </Button> */}
-          </div>
+            </Button>
+          </div> */}
           <label className='flex-1'>
             <span className='sr-only'>Feedback Text Box</span>
             <input
