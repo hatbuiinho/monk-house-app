@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { startOfDay } from 'date-fns'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -29,6 +30,7 @@ type DataTableToolbarProps<TData> = {
     title?: string
     defaultDate?: Date
   }[]
+  className?: string
 }
 
 export function DataTableToolbar<TData>({
@@ -39,6 +41,7 @@ export function DataTableToolbar<TData>({
   onSelectModeChange,
   filters = [],
   dateFilters = [],
+  className,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
@@ -49,7 +52,7 @@ export function DataTableToolbar<TData>({
   return (
     <div className='flex items-center justify-between'>
       <div className='flex flex-1 flex-col items-start gap-2 overflow-y-scroll sm:flex-row sm:items-center sm:space-x-2'>
-        <div className='flex'>
+        <div className='w-full'>
           {searchKey ? (
             <Input
               placeholder={searchPlaceholder}
@@ -59,14 +62,14 @@ export function DataTableToolbar<TData>({
               onChange={(event) =>
                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
               }
-              className='h-8 w-[150px] lg:w-[250px]'
+              className='h-8'
             />
           ) : (
             <Input
               placeholder={searchPlaceholder}
               value={table.getState().globalFilter ?? ''}
               onChange={(event) => table.setGlobalFilter(event.target.value)}
-              className='h-8 w-[150px] lg:w-[250px]'
+              className={cn('h-8 w-[150px] lg:w-[250px]', className)}
             />
           )}
         </div>

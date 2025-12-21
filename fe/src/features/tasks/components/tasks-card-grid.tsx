@@ -109,7 +109,9 @@ export function TasksCardGrid({ data }: DataTableProps) {
         'flex flex-1 flex-col gap-4'
       )}
     >
+      {/* <div className='w-full'> */}
       <DataTableToolbar
+        className='w-full'
         table={table}
         searchPlaceholder='Filter by title or ID...'
         selectMode={selectMode}
@@ -135,6 +137,7 @@ export function TasksCardGrid({ data }: DataTableProps) {
           },
         ]}
       />
+      {/* </div> */}
       <div>
         {/* Card Grid Layout */}
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>

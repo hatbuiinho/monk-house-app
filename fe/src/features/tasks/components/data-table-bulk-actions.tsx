@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { type Table } from '@tanstack/react-table'
-import { Trash2, CircleArrowUp, ArrowUpDown, Download } from 'lucide-react'
+import { CircleArrowUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { sleep } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,8 +15,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
-import { priorities, statuses } from '../data/data'
-import { type Task } from '../data/schema'
+import { tasksAPI } from '../api/tasks-api'
+import { statuses } from '../data/data'
+import { type Task, type TaskStatus } from '../data/schema'
 import { TasksMultiDeleteDialog } from './tasks-multi-delete-dialog'
 
 type DataTableBulkActionsProps<TData> = {
@@ -32,42 +32,56 @@ export function DataTableBulkActions<TData>({
 
   const handleBulkStatusChange = (status: string) => {
     const selectedTasks = selectedRows.map((row) => row.original as Task)
-    toast.promise(sleep(2000), {
-      loading: 'Updating status...',
-      success: () => {
-        table.resetRowSelection()
-        return `Status updated to "${status}" for ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''}.`
-      },
-      error: 'Error',
-    })
-    table.resetRowSelection()
+    const taskIds = selectedTasks.map((task) => task.id)
+
+    try {
+      toast.promise(
+        Promise.all(
+          taskIds.map((taskId) =>
+            tasksAPI.updateTask(taskId, { status: status as TaskStatus })
+          )
+        ),
+        {
+          loading: 'Updating status...',
+          success: () => {
+            table.resetRowSelection()
+            return `Status updated to "${status}" for ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''}.`
+          },
+          error: () => 'Failed to update status',
+        }
+      )
+    } catch (_error) {
+      toast.error('Failed to update status')
+    }
   }
 
-  const handleBulkPriorityChange = (priority: string) => {
-    const selectedTasks = selectedRows.map((row) => row.original as Task)
-    toast.promise(sleep(2000), {
-      loading: 'Updating priority...',
-      success: () => {
-        table.resetRowSelection()
-        return `Priority updated to "${priority}" for ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''}.`
-      },
-      error: 'Error',
-    })
-    table.resetRowSelection()
-  }
+  // TODO: handle priority change
+  // const handleBulkPriorityChange = (priority: string) => {
+  //   const selectedTasks = selectedRows.map((row) => row.original as Task)
+  //   toast.promise(sleep(2000), {
+  //     loading: 'Updating priority...',
+  //     success: () => {
+  //       table.resetRowSelection()
+  //       return `Priority updated to "${priority}" for ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''}.`
+  //     },
+  //     error: 'Error',
+  //   })
+  //   table.resetRowSelection()
+  // }
 
-  const handleBulkExport = () => {
-    const selectedTasks = selectedRows.map((row) => row.original as Task)
-    toast.promise(sleep(2000), {
-      loading: 'Exporting tasks...',
-      success: () => {
-        table.resetRowSelection()
-        return `Exported ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''} to CSV.`
-      },
-      error: 'Error',
-    })
-    table.resetRowSelection()
-  }
+  // TODO: handle export
+  // const handleBulkExport = () => {
+  //   const selectedTasks = selectedRows.map((row) => row.original as Task)
+  //   toast.promise(sleep(2000), {
+  //     loading: 'Exporting tasks...',
+  //     success: () => {
+  //       table.resetRowSelection()
+  //       return `Exported ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''} to CSV.`
+  //     },
+  //     error: 'Error',
+  //   })
+  //   table.resetRowSelection()
+  // }
 
   return (
     <>
@@ -108,7 +122,7 @@ export function DataTableBulkActions<TData>({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
@@ -142,9 +156,9 @@ export function DataTableBulkActions<TData>({
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
-        <Tooltip>
+        {/* <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant='outline'
@@ -161,7 +175,7 @@ export function DataTableBulkActions<TData>({
           <TooltipContent>
             <p>Export tasks</p>
           </TooltipContent>
-        </Tooltip>
+        </Tooltip> */}
 
         <Tooltip>
           <TooltipTrigger asChild>
