@@ -6,8 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
-import { useAuthStore } from '@/stores/auth-store'
-import { auth } from '@/lib/pocketbase'
+import { pb } from '@/lib/pocketbase'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,7 +43,6 @@ export function SignUpForm({
 }: React.HTMLAttributes<HTMLFormElement>) {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { auth: authStore } = useAuthStore()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,36 +57,24 @@ export function SignUpForm({
     setIsLoading(true)
 
     try {
-      // Use PocketBase registration
-      const result = await auth.registerWithPassword(
-        data.email,
-        data.password,
-        data.confirmPassword
+      // Use PocketBase registration directly
+      await pb.collection('users').create({
+        email: data.email,
+        password: data.password,
+        passwordConfirm: data.confirmPassword,
+      })
+
+      // Auto-login after registration
+      const authData = await pb
+        .collection('users')
+        .authWithPassword(data.email, data.password)
+
+      toast.success(
+        `Welcome, ${authData.record.email}! Your account has been created.`
       )
 
-      if (result.success && result.user && result.token) {
-        // Convert PocketBase user to the format expected by the auth store
-        const pbUser = {
-          accountNo: result.user.id,
-          email: result.user.email,
-          role: ['user'], // Default role, you can modify this based on your PocketBase user model
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        }
-
-        // Set user and access token in the auth store
-        authStore.setUser(pbUser)
-        authStore.setAccessToken(result.token)
-
-        toast.success(
-          `Welcome, ${result.user.email}! Your account has been created.`
-        )
-
-        // Redirect to dashboard
-        navigate({ to: '/', replace: true })
-      } else {
-        // Handle registration failure
-        toast.error(result.error || 'Registration failed')
-      }
+      // Redirect to dashboard
+      navigate({ to: '/', replace: true })
     } catch (error) {
       // Handle any unexpected errors
       const errorMessage =

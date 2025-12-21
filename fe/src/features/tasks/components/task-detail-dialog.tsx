@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { FeedbackConversation } from '@/features/feedbacks/components/feedback-conversation'
 import { useUserQuery } from '@/features/users/hooks/useUserQuery'
 import { statuses } from '../data/data'
 import {
@@ -69,8 +71,8 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-h-[80vh] overflow-y-auto sm:max-w-[500px]'>
-        <DialogHeader>
+      <DialogContent className='flex h-screen max-w-[900px] flex-col overflow-y-auto rounded-none pt-0 md:h-2/3 lg:max-h-[80vh] lg:rounded'>
+        <DialogHeader className='sticky top-0 bg-white pt-10'>
           <DialogTitle className='text-left text-lg'>
             <div>Task Details</div>
 
@@ -82,101 +84,136 @@ export function TaskDetailDialog({
             </div>
           </DialogTitle>
         </DialogHeader>
+        <Tabs defaultValue='info' className='flex h-full grow flex-row'>
+          <TabsContent className='grow' value='info'>
+            <div className='grid grid-cols-1'>
+              {/* Left column - Task Details */}
+              <div className='space-y-3'>
+                {/* Task ID and Status */}
 
-        <div className='space-y-3'>
-          {/* Task ID and Status */}
+                <div className='flex items-center justify-between'>
+                  {/* Task Title */}
+                  <div>
+                    <h3 className='text-lg leading-tight font-semibold'>
+                      {task.title}
+                    </h3>
+                  </div>
 
-          <div className='flex items-center justify-between'>
-            {/* Task Title */}
-            <div>
-              <h3 className='text-lg leading-tight font-semibold'>
-                {task.title}
-              </h3>
-            </div>
+                  {/* {status && (
+          <Badge variant='outline' className='flex items-center gap-1'>
+            {status.icon && <status.icon className='h-3 w-3' />}
+            {status.label}
+          </Badge>
+        )} */}
+                </div>
 
-            {/* {status && (
-              <Badge variant='outline' className='flex items-center gap-1'>
-                {status.icon && <status.icon className='h-3 w-3' />}
-                {status.label}
-              </Badge>
-            )} */}
-          </div>
+                <Separator />
 
-          <Separator />
+                <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
+                  <div className='flex items-center gap-2'>
+                    {/* <Dropdown
+            defaultValue={updateValue.status}
+            onValueChange={(value) => {
+              setUpdateValue({ status: value as TaskStatus })
+              onSubmit({ status: value })
+            }}
+            placeholder='Select status'
+            items={statuses}
+            className='border-0 bg-gray-50 shadow-none outline-0'
+          /> */}
+                    <ResponsiveDropdown
+                      defaultValue={updateValue.status as string}
+                      items={statuses}
+                      onChange={(value) => {
+                        setUpdateValue({ status: value.value as TaskStatus })
+                        onSubmit({ status: value.value })
+                      }}
+                    />
+                  </div>
 
-          <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
-            <div className='flex items-center gap-2'>
-              {/* <Dropdown
-                defaultValue={updateValue.status}
-                onValueChange={(value) => {
-                  setUpdateValue({ status: value as TaskStatus })
-                  onSubmit({ status: value })
-                }}
-                placeholder='Select status'
-                items={statuses}
-                className='border-0 bg-gray-50 shadow-none outline-0'
-              /> */}
-              <ResponsiveDropdown
-                defaultValue={updateValue.status as string}
-                items={statuses}
-                onChange={(value) => {
-                  setUpdateValue({ status: value.value as TaskStatus })
-                  onSubmit({ status: value.value })
-                }}
-              />
-            </div>
+                  {/* Task Assignees */}
 
-            {/* Task Assignees */}
+                  <div className='flex items-center gap-2'>
+                    <div>
+                      <MultiSelect
+                        options={memoizedUsers.map((user) => ({
+                          label: `${user.name} ${user.username}`,
+                          value: user.id,
+                          icon: () => (
+                            <Avatar>
+                              <AvatarImage
+                                src={user.avatar_url}
+                                alt={user.name}
+                              />
+                              <AvatarFallback>PQ</AvatarFallback>
+                            </Avatar>
+                          ),
+                        }))}
+                        defaultValue={updateValue.assignees}
+                        onValueChange={(value) => {
+                          setUpdateValue({ assignees: value })
+                          onSubmit({ assignees: value })
+                        }}
+                        placeholder={
+                          userLoading ? 'Loading users...' : 'Select assignees'
+                        }
+                        disabled={userLoading}
+                        hideCaret
+                        className='bg-white shadow-none outline-0 hover:bg-gray-100'
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            <div className='flex items-center gap-2'>
-              <div>
-                <MultiSelect
-                  options={memoizedUsers.map((user) => ({
-                    label: `${user.name} ${user.username}`,
-                    value: user.id,
-                    icon: () => (
-                      <Avatar>
-                        <AvatarImage src={user.avatar_url} alt={user.name} />
-                        <AvatarFallback>PQ</AvatarFallback>
-                      </Avatar>
-                    ),
-                  }))}
-                  defaultValue={updateValue.assignees}
-                  onValueChange={(value) => {
-                    setUpdateValue({ assignees: value })
-                    onSubmit({ assignees: value })
-                  }}
-                  placeholder={
-                    userLoading ? 'Loading users...' : 'Select assignees'
-                  }
-                  disabled={userLoading}
-                  hideCaret
-                  className='bg-white shadow-none outline-0 hover:bg-gray-100'
-                />
+                {/* Task Description */}
+                <Card>
+                  <CardHeader className='pb-3'>
+                    <CardTitle className='text-sm font-medium'>
+                      Description
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {task.description ? (
+                      <div
+                        className='prose prose-sm max-w-none text-sm'
+                        dangerouslySetInnerHTML={{ __html: task.description }}
+                      />
+                    ) : (
+                      <p className='text-muted-foreground text-sm'>
+                        No description available for this task.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          </div>
-
-          {/* Task Description */}
-          <Card>
-            <CardHeader className='pb-3'>
-              <CardTitle className='text-sm font-medium'>Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {task.description ? (
-                <div
-                  className='prose prose-sm max-w-none text-sm'
-                  dangerouslySetInnerHTML={{ __html: task.description }}
-                />
-              ) : (
-                <p className='text-muted-foreground text-sm'>
-                  No description available for this task.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+          </TabsContent>
+          <TabsContent className='h-full grow' value='chats'>
+            {/* Right column - Feedback Conversation */}
+            <div className='h-[43vh]'>
+              <h3 className='mb-2 text-lg font-medium'>Conversation</h3>
+              <FeedbackConversation taskId={task.id} />
+            </div>
+          </TabsContent>
+          <Separator orientation='vertical' />
+          <TabsList className='flex h-full flex-col'>
+            <TabsTrigger value='info'>Details</TabsTrigger>
+            <TabsTrigger value='chats'>Chats</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )
+  // <DialogHeader className='sticky top-0 bg-white pt-6'>
+  //   <DialogTitle className='text-left text-lg'>
+  //     <div>Task Details</div>
+
+  //     <div className='text-muted-foreground text-[12px]'>
+  //       Task ID:{' '}
+  //       <span className='text-foreground text-sx font-mono'>
+  //         #{task.id}
+  //       </span>
+  //     </div>
+  //   </DialogTitle>
+  // </DialogHeader>
 }

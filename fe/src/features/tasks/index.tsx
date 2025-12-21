@@ -43,8 +43,6 @@ function TasksContent() {
   //   fetchTasks()
   // }, [filters])
 
-  console.log('rerender task content')
-
   // const { tasks, isLoading, error } = useTaskQuery() //TODO: add task stats
 
   if (isLoading) {
