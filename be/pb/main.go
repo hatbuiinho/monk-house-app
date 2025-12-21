@@ -18,6 +18,8 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
+
+	"be.monk.house/notification"
 )
 
 // OAuth2 Structures
@@ -107,6 +109,11 @@ func main() {
 
 		e.Router.GET("/api/mattermost/avatar/{id}", func(c *core.RequestEvent) error {
 			return handleMattermostAvartar(c)
+		})
+
+		// Mattermost API route - Post message to Mattermost channel
+		e.Router.POST("/api/mattermost/post", func(c *core.RequestEvent) error {
+			return notification.HandleMattermostPost(c)
 		})
 
 		// Health check
@@ -329,8 +336,6 @@ func exchangeCodeForToken(code string) (*OAuthTokenResponse, error) {
 		return nil, err
 	}
 
-	log.Printf("Code exchange ======: %v", token)
-
 	return &token, nil
 }
 
@@ -375,7 +380,6 @@ func getMattermostUser(accessToken string) (*MattermostUser, error) {
 func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *MattermostUser) (map[string]interface{}, error) {
 	// Use PocketBase's built-in API to find or create user
 	// This is a simplified implementation that demonstrates the database saving
-
 	// Try to find existing user by email using PocketBase API
 	collection, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
@@ -394,17 +398,20 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 
 	userRecord := core.NewRecord(collection)
 
+	pocketbaseServerUrl := os.Getenv("POCKETBASE_SERVER_URL")
+
 	if existingRecord != nil {
 		// Update existing user
 		userRecord = existingRecord
 		userRecord.Set("name", fmt.Sprintf("%s %s", mmUser.FirstName, mmUser.LastName))
 		userRecord.Set("username", mmUser.Username)
-		userRecord.Set("avatar", mmUser.AvatarURL)
+		userRecord.Set("avatar_url", fmt.Sprintf("%s/api/mattermost/avatar/%s", pocketbaseServerUrl, mmUser.ID))
 		userRecord.Set("updated", types.NowDateTime())
 
 		if err := app.Save(userRecord); err != nil {
 			return nil, fmt.Errorf("failed to update user: %v", err)
 		}
+
 	} else {
 		// Create new user
 		// userRecord = core.NewRecord(collection)
@@ -417,7 +424,7 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 		userRecord.Set("email", mmUser.Email)
 		userRecord.Set("name", fmt.Sprintf("%s %s", mmUser.FirstName, mmUser.LastName))
 		userRecord.Set("username", mmUser.Username)
-		userRecord.Set("avatar", mmUser.AvatarURL)
+		userRecord.Set("avatar_url", fmt.Sprintf("%s/api/mattermost/avatar/%s", pocketbaseServerUrl, mmUser.ID))
 		userRecord.Set("status", "active")
 		userRecord.Set("roles", roleIds)
 		userRecord.Set("phoneNumber", "")
@@ -430,15 +437,11 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 			return nil, fmt.Errorf("failed to create user: %v", err)
 		}
 	}
+	fmt.Printf("New avatar url is %s", userRecord.Get("avatar_url"))
 
 	// Return user data
 	user := map[string]any{
-		"id":       userRecord.Id,
-		"email":    userRecord.GetString("email"),
-		"name":     userRecord.GetString("name"),
-		"username": userRecord.GetString("username"),
-		"avatar":   userRecord.GetString("avatar"),
-		"role":     userRecord.GetString("role"),
+		"id": userRecord.Id,
 	}
 
 	return user, nil
@@ -543,13 +546,13 @@ func handleOAuthExchange(c *core.RequestEvent, app *pocketbase.PocketBase) error
 	session.Set("used", true)
 	_ = app.Save(session)
 
-	userInfo := map[string]interface{}{
-		"id":       user.Id,
-		"email":    user.GetString("email"),
-		"name":     user.GetString("name"),
-		"username": user.GetString("username"),
-		"avatar":   user.GetString("avatar"),
-		"roles":    roles,
+	userInfo := map[string]any{
+		"id":         user.Id,
+		"email":      user.GetString("email"),
+		"name":       user.GetString("name"),
+		"username":   user.GetString("username"),
+		"avatar_url": user.GetString("avatar_url"),
+		"roles":      roles,
 	}
 
 	// Return success response
