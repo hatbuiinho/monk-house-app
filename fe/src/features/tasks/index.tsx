@@ -2,48 +2,14 @@ import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { TasksCardGrid } from './components/tasks-card-grid'
 import { TasksDialogs } from './components/tasks-dialogs'
 import { TasksPrimaryButtons } from './components/tasks-primary-buttons'
 import { useTasksStore } from './data/tasks-store'
 
-// import { useTasksStore } from './data/tasks-store'
-
 function TasksContent() {
   const { isLoading, tasks, error } = useTasksStore()
-  // const {} = useTaskQuery()
-  // const {
-  //   data: tasks,
-  //   isLoading,
-  //   error,
-  //   // refetch,
-  // } = useQuery({
-  //   queryKey: ['tasks', filters],
-  //   queryFn: () => tasksAPI.getTasks(filters).then((res) => res.items),
-  //   staleTime: 5 * 60 * 1000, // 5 minutes
-  //   gcTime: 10 * 60 * 1000, // 10 minutes
-  // })
-  // const [tasks, setTasks] = useState<Task[]>([])
-  // const [isLoading, setIsLoading] = useState(true)
-  // const [error, setError] = useState<Error | null>(null)
-
-  // useEffect(() => {
-  //   async function fetchTasks() {
-  //     try {
-  //       const res = await tasksAPI.getTasks(filters)
-  //       setTasks(res.items)
-  //     } catch (error) {
-  //       setError(error as Error)
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
-  //   fetchTasks()
-  // }, [filters])
-
-  // const { tasks, isLoading, error } = useTaskQuery() //TODO: add task stats
 
   if (isLoading) {
     return (
@@ -99,7 +65,7 @@ export function Tasks() {
   return (
     <>
       <Header fixed>
-        <Search />
+        {/* <Search /> */}
         <div className='ms-auto flex items-center space-x-4'>
           <ThemeSwitch />
           <ConfigDrawer />

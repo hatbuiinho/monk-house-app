@@ -70,7 +70,7 @@ export function DataTableToolbar<TData>({
               placeholder={searchPlaceholder}
               value={table.getState().globalFilter ?? ''}
               onChange={(event) => table.setGlobalFilter(event.target.value)}
-              className={cn('h-8 w-[150px] lg:w-[250px]', className)}
+              className={cn('h-8', className)}
             />
           )}
         </div>
@@ -88,7 +88,7 @@ export function DataTableToolbar<TData>({
               )}
             </Button>
           )}
-          <div className='hidden md:block'>
+          <div className='hidden gap-2 md:flex'>
             {filters.map((filter) => {
               const column = table.getColumn(filter.columnId)
               if (!column) return null

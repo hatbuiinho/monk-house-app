@@ -22,7 +22,7 @@ import { TaskCard } from './task-card'
 import { TaskDetailDialog } from './task-detail-dialog'
 import { tasksColumns as columns } from './tasks-columns'
 
-const route = getRouteApi('/_authenticated/tasks/')
+const route = getRouteApi('/_authenticated/')
 
 type DataTableProps = {
   data: Task[]
