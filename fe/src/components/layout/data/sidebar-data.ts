@@ -1,56 +1,49 @@
-import {
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
-  LayoutDashboard,
-  ListTodo,
-  Users,
-  Grid2X2,
-} from 'lucide-react'
+import { ListTodo, Users } from 'lucide-react'
+import { Logo } from '@/assets/logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
-  user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
+  // user: {
+  //   name: 'satnaing',
+  //   email: 'satnaingdev@gmail.com',
+  //   avatar: '/avatars/shadcn.jpg',
+  // },
   teams: [
     {
       name: 'Monk House App',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
+      logo: Logo,
+      plan: 'Công việc Nhà Tăng',
     },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
+    // {
+    //   name: 'Acme Inc',
+    //   logo: GalleryVerticalEnd,
+    //   plan: 'Enterprise',
+    // },
+    // {
+    //   name: 'Acme Corp.',
+    //   logo: AudioWaveform,
+    //   plan: 'Startup',
+    // },
   ],
   navGroups: [
     {
       title: 'General',
       items: [
-        {
-          title: 'Dashboard',
-          url: '/',
-          icon: LayoutDashboard,
-        },
+        // {
+        //   title: 'Dashboard',
+        //   url: '/',
+        //   icon: LayoutDashboard,
+        // },
         {
           title: 'Tasks',
-          url: '/tasks',
+          url: '/',
           icon: ListTodo,
         },
-        {
-          title: 'Departments',
-          url: '/departments',
-          icon: Grid2X2,
-        },
+        // {
+        //   title: 'Departments',
+        //   url: '/departments',
+        //   icon: Grid2X2,
+        // },
         // {
         //   title: 'Chats',
         //   url: '/chats',
