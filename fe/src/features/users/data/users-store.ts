@@ -97,7 +97,7 @@ type UsersStore = {
     | {
         total: number
         by_status: Record<UserStatus, number>
-        by_role: Record<UserRole, number>
+        by_role: Record<UserRole['code'], number>
       }
     | undefined
   setStats: (
@@ -105,7 +105,7 @@ type UsersStore = {
       | {
           total: number
           by_status: Record<UserStatus, number>
-          by_role: Record<UserRole, number>
+          by_role: Record<UserRole['code'], number>
         }
       | undefined
   ) => void

@@ -74,7 +74,7 @@ export function TasksMutateDrawer({
           status: data.status as TaskStatus,
           label: data.label,
           // priority: data.priority as TaskPriority,
-          assignees: data.assignees,
+          assignees: data.assignees as string[],
           due_date: dueDate,
         }
         await updateTask(currentRow.id, updateData)
@@ -86,9 +86,9 @@ export function TasksMutateDrawer({
           status: data.status as TaskStatus,
           label: data.label,
           // priority: data.priority as TaskPriority,
-          assignees: data.assignees,
+          assignees: data.assignees as string[],
           due_date: dueDate,
-          departments: data.departments,
+          departments: data.departments as string[],
         }
         await createTask(createData)
       }

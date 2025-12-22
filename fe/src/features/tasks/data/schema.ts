@@ -31,20 +31,21 @@ export const taskSchema = z.object({
 })
 
 // Task creation schema (without id and timestamps)
-export const taskCreateSchema = taskSchema.omit({
-  id: true,
-  created: true,
-  updated: true,
-})
-
-// Task update schema (all fields optional except id)
-export const taskUpdateSchema = taskCreateSchema
-  .omit({ assignees: true, departments: true })
+export const taskCreateSchema = taskSchema
+  .omit({
+    id: true,
+    created: true,
+    updated: true,
+    assignees: true,
+    departments: true,
+  })
   .extend({
     assignees: z.array(z.string()).optional(),
     departments: z.array(z.string()).optional(),
   })
-  .partial()
+
+// Task update schema (all fields optional except id)
+export const taskUpdateSchema = taskCreateSchema.partial()
 
 // Task filter schema for queries
 export const taskFilterSchema = z.object({
@@ -65,7 +66,9 @@ export const formSchema = z.object({
   status: z.string().min(1, 'Please select a status.'),
   label: z.string().optional(),
   // priority: z.string().min(1, 'Please choose a priority.'),
-  assignees: z.array(z.string()),
+  assignees: z
+    .union([z.array(z.string()), z.array(z.custom<User>())])
+    .optional(),
   due_date: z.string().optional(),
   departments: z
     .union([z.array(z.string()), z.array(z.custom<Department>())])

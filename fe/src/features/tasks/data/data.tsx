@@ -1,13 +1,11 @@
 import {
+  AlertCircle,
   ArrowDown,
   ArrowRight,
   ArrowUp,
-  Circle,
   CheckCircle,
-  AlertCircle,
+  Circle,
   Timer,
-  HelpCircle,
-  CircleOff,
 } from 'lucide-react'
 
 export const labels = [

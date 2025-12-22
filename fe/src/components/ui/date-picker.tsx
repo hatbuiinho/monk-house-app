@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { format } from 'date-fns'
 import { CalendarIcon } from '@radix-ui/react-icons'
 import { cn } from '@/lib/utils'

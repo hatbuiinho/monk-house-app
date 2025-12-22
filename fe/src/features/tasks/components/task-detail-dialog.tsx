@@ -81,7 +81,7 @@ export function TaskDetailDialog({
         // Prepare update data
         const updateData: TaskUpdate = {
           status: data.status as TaskStatus,
-          assignees: data.assignees,
+          assignees: data.assignees as string[],
           due_date: dueDate,
         }
         await updateTask(taskId, updateData)

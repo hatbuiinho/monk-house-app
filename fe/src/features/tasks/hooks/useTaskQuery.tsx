@@ -2,7 +2,12 @@ import { useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { tasksAPI } from '../api/tasks-api'
-import type { TaskError, TaskStatus } from '../data/schema'
+import type {
+  TaskCreate,
+  TaskError,
+  TaskStatus,
+  TaskUpdate,
+} from '../data/schema'
 import { useTasksStore } from '../data/tasks-store'
 
 export const useTaskQuery = () => {
@@ -42,14 +47,7 @@ export const useTaskQuery = () => {
 
   // Create task mutation
   const createTaskMutation = useMutation({
-    mutationFn: (task: {
-      title: string
-      description?: string
-      status: TaskStatus
-      label?: string
-      assignees: string[]
-      due_date?: string
-    }) => tasksAPI.createTask(task),
+    mutationFn: (task: TaskCreate) => tasksAPI.createTask(task),
     onSuccess: () => {
       toast.success('Task created successfully')
       setOpen(null)
@@ -140,23 +138,13 @@ export const useTaskQuery = () => {
     description?: string
     status: TaskStatus
     label?: string
-    assignees: string[]
+    assignees?: string[]
     due_date?: string
   }) => {
     await createTaskMutation.mutateAsync(task)
   }
 
-  const updateTask = async (
-    id: string,
-    task: Partial<{
-      title: string
-      description?: string
-      status: TaskStatus
-      label?: string
-      assignees?: string[]
-      due_date?: string
-    }>
-  ) => {
+  const updateTask = async (id: string, task: TaskUpdate) => {
     await updateTaskMutation.mutateAsync({ id, task })
   }
 
