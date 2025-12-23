@@ -1,5 +1,6 @@
 import { Loader } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FormControl } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ type SelectDropdownProps = {
   isControlled?: boolean
 }
 
-export function SelectDropdown({
+export function FormSelectDropdown({
   defaultValue,
   onValueChange,
   isPending,
@@ -34,9 +35,11 @@ export function SelectDropdown({
     : { defaultValue, onValueChange }
   return (
     <Select {...defaultState}>
-      <SelectTrigger disabled={disabled} className={cn(className)}>
-        <SelectValue placeholder={placeholder ?? 'Select'} />
-      </SelectTrigger>
+      <FormControl>
+        <SelectTrigger disabled={disabled} className={cn(className)}>
+          <SelectValue placeholder={placeholder ?? 'Select'} />
+        </SelectTrigger>
+      </FormControl>
       <SelectContent>
         {isPending ? (
           <SelectItem disabled value='loading' className='h-14'>

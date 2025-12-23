@@ -119,8 +119,8 @@ export function TasksMutateDrawer({
   if (isMobile) {
     // Mobile: Use right sheet
     return (
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side='right' className='flex flex-col'>
+      <Sheet modal={false} open={open} onOpenChange={handleOpenChange}>
+        <SheetContent side='right' className='flex flex-col w-full md:w-3/4'>
           <SheetHeader className='text-start'>
             <SheetTitle>{title}</SheetTitle>
             <SheetDescription>
@@ -161,7 +161,7 @@ export function TasksMutateDrawer({
 
   // Desktop: Use dialog
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog modal={false} open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='flex flex-col sm:max-w-[500px]'>
         <DialogHeader className='text-start'>
           <DialogTitle>{title}</DialogTitle>

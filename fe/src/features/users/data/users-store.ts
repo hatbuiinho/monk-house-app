@@ -166,7 +166,3 @@ export const useUsersStore = create<UsersStore>((set) => ({
   refetchStats: () => {},
   setRefetchStats: (refetchStats) => set({ refetchStats }),
 }))
-
-export const useUsers = () => {
-  return useUsersStore()
-}

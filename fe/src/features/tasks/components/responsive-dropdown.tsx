@@ -111,7 +111,7 @@ function StatusList({
               value={status.value}
               onSelect={(value) => {
                 setSelectedStatus(
-                  items.find((priority) => priority.value === value) || null
+                  items.find((status) => status.value === value) || null
                 )
                 onChange(status)
                 setOpen(false)

@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { FormSelectDropdown } from '@/components/form-select-dropdown'
 import { roles } from '../data/data'
 
 const formSchema = z.object({
@@ -104,7 +104,7 @@ export function UsersInviteDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <SelectDropdown
+                  <FormSelectDropdown
                     defaultValue={field.value}
                     onValueChange={field.onChange}
                     placeholder='Select a role'

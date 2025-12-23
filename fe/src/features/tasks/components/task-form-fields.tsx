@@ -9,9 +9,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Textarea } from '@/components/ui/textarea'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { FormSelectDropdown } from '@/components/form-select-dropdown'
 import { useDepartmentsStore } from '@/features/departments/data/departments-store'
 import { useDepartmentQuery } from '@/features/departments/hooks/use-department-query'
+import { useUsersStore } from '@/features/users/data/users-store'
+import { useUserQuery } from '@/features/users/hooks/useUserQuery'
 import { statuses } from '../data/data'
 import type { TaskForm } from '../data/schema'
 
@@ -23,7 +25,9 @@ interface FormFieldsProps {
 // Common form fields component - moved outside to prevent recreation on each render
 const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
   useDepartmentQuery()
+  useUserQuery()
   const { departments, isLoading } = useDepartmentsStore()
+  const { users } = useUsersStore()
   return (
     <>
       <FormField
@@ -63,7 +67,7 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <SelectDropdown
+              <FormSelectDropdown
                 defaultValue={field.value}
                 onValueChange={field.onChange}
                 placeholder='Select status'
@@ -74,30 +78,7 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
           )}
         />
       )}
-      {/* <FormField
-        control={control}
-        name='assignees'
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Assignee</FormLabel>
-            <FormControl>
-              <MultiSelect
-                options={users.map((user) => ({
-                  label: `${user.name} ${user.username}`,
-                  value: user.id,
-                }))}
-                value={field.value}
-                onValueChange={field.onChange}
-                placeholder={
-                  isLoading ? 'Loading users...' : 'Select assignees'
-                }
-                disabled={isLoading}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      /> */}
+
       <FormField
         control={control}
         name='departments'
@@ -120,6 +101,30 @@ const TaskFormFields = ({ control, isUpdate }: FormFieldsProps) => {
                 onValueChange={field.onChange}
                 placeholder={
                   isLoading ? 'Loading departments...' : 'Select departments'
+                }
+                disabled={isLoading}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name='assignees'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Assignee</FormLabel>
+            <FormControl>
+              <MultiSelect
+                options={users.map((user) => ({
+                  label: `${user.name} ${user.username}`,
+                  value: user.id,
+                }))}
+                value={field.value as string[]}
+                onValueChange={field.onChange}
+                placeholder={
+                  isLoading ? 'Loading users...' : 'Select assignees'
                 }
                 disabled={isLoading}
               />

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Separator } from '@/components/ui/separator'
+import { SelectDropdown } from '@/components/select-dropdown'
 import { FeedbackConversation } from '@/features/feedbacks/components/feedback-conversation'
 import { useUserQuery } from '@/features/users/hooks/useUserQuery'
 import { tasksAPI } from '../api/tasks-api'
@@ -23,7 +24,6 @@ import {
   type TaskUpdate,
 } from '../data/schema'
 import { useTaskQuery } from '../hooks/useTaskQuery'
-import { ResponsiveDropdown } from './responsive-dropdown'
 
 type TaskDetailDialogProps = {
   task?: Task
@@ -111,7 +111,7 @@ export function TaskDetailDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog modal={false} open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex h-screen max-w-[900px] flex-col rounded-none px-0 pt-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'>
         <div className='no-scrollbar h-full overflow-y-scroll'>
           <DialogHeader className='sticky top-0 bg-white pt-3'>
@@ -165,12 +165,20 @@ export function TaskDetailDialog({
 
                   <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
                     <div className='flex items-center gap-2'>
-                      <ResponsiveDropdown
+                      {/* <ResponsiveDropdown
                         defaultValue={currentTask.status as string}
                         items={statuses}
                         onChange={(value) => {
                           onSubmit({ status: value.value })
                         }}
+                      /> */}
+                      <SelectDropdown
+                        defaultValue={currentTask.status as string}
+                        onValueChange={(value) => {
+                          onSubmit({ status: value })
+                        }}
+                        placeholder='Select status'
+                        items={statuses}
                       />
                     </div>
 
