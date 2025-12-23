@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -73,11 +74,49 @@ func main() {
 
 	app := pocketbase.New()
 
+	app.OnRecordAfterCreateSuccess("tasks").BindFunc(func(e *core.RecordEvent) error {
+		channelIds := []string{}
+		departmentIds := e.Record.GetStringSlice("departments")
+		assigneeIds := e.Record.GetStringSlice("assignees")
+		// Get Mattermost channels from assignees
+		for _, userId := range assigneeIds {
+			user, err := app.FindRecordById("users", userId)
+			if err == nil && user != nil {
+				mmChannel := user.GetString("mm_channel")
+				if mmChannel != "" {
+					channelIds = append(channelIds, mmChannel)
+				}
+			}
+		}
+
+		// Get Mattermost channels from departments
+		for _, deptId := range departmentIds {
+			dept, err := app.FindRecordById("departments", deptId)
+			if err == nil && dept != nil {
+				mattermostChannel := dept.GetString("mattermost_channel")
+				if mattermostChannel != "" {
+					channelIds = append(channelIds, mattermostChannel)
+				}
+			}
+		}
+
+		taskTitle := e.Record.Get("title")
+		taskDetailLink := fmt.Sprintf("%s/%s", os.Getenv("APP_URL"), e.Record.Id)
+		message := fmt.Sprintf("**%s %s**\n%s%s", "[Công việc mới]", taskTitle, "Vui lòng xác nhận và xem chi tiết công việc tại link sau: ", taskDetailLink)
+
+		_, err := notification.PostMessageToMattermost(channelIds, message)
+		if err != nil {
+			log.Println(err)
+		}
+		return e.Next()
+	})
+
 	// fires only for "tasks" collections
 	app.OnRecordCreateRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		if !e.Auth.IsSuperuser() {
 			e.Record.Set("createdBy", e.Auth.Id)
 		}
+
 		return e.Next()
 	})
 
@@ -86,6 +125,11 @@ func main() {
 		if !e.Auth.IsSuperuser() {
 			e.Record.Set("updatedBy", e.Auth.Id)
 		}
+
+		return e.Next()
+	})
+
+	app.OnRecordDeleteRequest("tasks").BindFunc(func(e *core.RecordRequestEvent) error {
 		return e.Next()
 	})
 
@@ -115,6 +159,7 @@ func main() {
 		e.Router.POST("/api/mattermost/post", func(c *core.RequestEvent) error {
 			return notification.HandleMattermostPost(c)
 		})
+		// .Bind(apis.RequireAuth())
 
 		// Health check
 		e.Router.GET("/health", func(c *core.RequestEvent) error {
@@ -436,6 +481,20 @@ func mapMattermostUserToPocketBase(app *pocketbase.PocketBase, mmUser *Mattermos
 		if err := app.Save(userRecord); err != nil {
 			return nil, fmt.Errorf("failed to create user: %v", err)
 		}
+
+		// Create Mattermost direct channel between bot and user
+		botId := os.Getenv("MATTERMOST_BOT_ID")
+		if botId != "" {
+			channelId, err := createMattermostDirectChannel(botId, mmUser.ID)
+			if err != nil {
+				log.Printf("Failed to create Mattermost direct channel: %v", err)
+			} else {
+				userRecord.Set("mm_channel", channelId)
+				if err := app.Save(userRecord); err != nil {
+					return nil, fmt.Errorf("failed to save Mattermost channel ID: %v", err)
+				}
+			}
+		}
 	}
 	fmt.Printf("New avatar url is %s", userRecord.Get("avatar_url"))
 
@@ -462,6 +521,54 @@ func generateState() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+// Create Mattermost direct channel between bot and user
+func createMattermostDirectChannel(botId string, userId string) (string, error) {
+	mmToken := os.Getenv("MATTERMOST_BOT_TOKEN")
+	if mmToken == "" {
+		return "", fmt.Errorf("MATTERMOST_BOT_TOKEN is not set")
+	}
+
+	directChannelURL := fmt.Sprintf(
+		"%s/api/v4/channels/direct",
+		os.Getenv("MATTERMOST_SERVER_URL"),
+	)
+
+	// Prepare the request body
+	requestBody := []string{botId, userId}
+	body, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request body: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", directChannelURL, bytes.NewBuffer(body))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %v", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+mmToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("API request failed with status %d", resp.StatusCode)
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	return result.ID, nil
 }
 
 func createOAuthSession(

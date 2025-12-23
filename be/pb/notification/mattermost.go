@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -50,85 +49,85 @@ type MattermostError struct {
 	IsOAuth     bool   `json:"is_oauth"`
 }
 
-// PostMessageToMattermost sends a message to a Mattermost channel with optional user mentions
+// PostMessageToMattermost sends a message to one or more Mattermost channels with optional user mentions
 // Parameters:
-//   - botToken: Bearer token for authentication
-//   - channelID: ID of the channel to post to
+//   - channelIDs: IDs of the channels to post to
 //   - message: Message content
 //   - usernames: List of usernames to mention in the message (e.g., ["@user1", "@user2"])
 //
 // Returns:
-//   - *MattermostResponse: Response from Mattermost API
+//   - []*MattermostResponse: Responses from Mattermost API for each channel
 //   - error: Any error encountered during the request
-func PostMessageToMattermost(channelID, message string, usernames []string) (*MattermostResponse, error) {
+func PostMessageToMattermost(channelIDs []string, message string) ([]*MattermostResponse, error) {
+	var responses []*MattermostResponse
+	if message == "" {
+		return nil, fmt.Errorf("message cannot be empty")
+	}
+
 	// Construct the message with mentions
-	finalMessage := message
-	if len(usernames) > 0 {
-		// Add @ symbol to each username
-		var mentions []string
-		for _, username := range usernames {
-			mentions = append(mentions, fmt.Sprintf("@%s", username))
+	finalMessage := fmt.Sprintf("%s%s", "@here ", message)
+
+	// Post to each channel
+	for _, channelID := range channelIDs {
+		// Create the request body
+		postData := MattermostPost{
+			ChannelID: channelID,
+			Message:   finalMessage,
 		}
-		mentionsStr := strings.Join(mentions, " ")
-		finalMessage = fmt.Sprintf("%s\n%s", mentionsStr, message)
-	}
 
-	// Create the request body
-	postData := MattermostPost{
-		ChannelID: channelID,
-		Message:   finalMessage,
-	}
-
-	// Convert to JSON
-	jsonData, err := json.Marshal(postData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request data: %w", err)
-	}
-
-	// Create HTTP request
-	apiUrl := fmt.Sprintf("%s%s", os.Getenv("MATTERMOST_SERVER_URL"), "/api/v4/posts")
-	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-
-	// Set headers
-	botToken := os.Getenv("MATTERMOST_BOT_TOKEN")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", botToken))
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Check response status
-	if resp.StatusCode != http.StatusCreated {
-		var errorResponse MattermostError
-		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
-			return nil, fmt.Errorf("request failed with status %d, failed to decode error response: %w", resp.StatusCode, err)
+		// Convert to JSON
+		jsonData, err := json.Marshal(postData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request data: %w", err)
 		}
-		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, errorResponse.Message)
+
+		// Create HTTP request
+		apiUrl := fmt.Sprintf("%s%s", os.Getenv("MATTERMOST_SERVER_URL"), "/api/v4/posts")
+		req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+		}
+
+		// Set headers
+		botToken := os.Getenv("MATTERMOST_BOT_TOKEN")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", botToken))
+		req.Header.Set("Content-Type", "application/json")
+
+		// Send request
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to send HTTP request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		// Check response status
+		if resp.StatusCode != http.StatusCreated {
+			var errorResponse MattermostError
+			if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+				return nil, fmt.Errorf("request failed with status %d, failed to decode error response: %w", resp.StatusCode, err)
+			}
+			return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, errorResponse.Message)
+		}
+
+		// Decode successful response
+		var response MattermostResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, fmt.Errorf("failed to decode response: %w", err)
+		}
+
+		responses = append(responses, &response)
 	}
 
-	// Decode successful response
-	var response MattermostResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &response, nil
+	return responses, nil
 }
 
 // Handle Mattermost post request
 func HandleMattermostPost(c *core.RequestEvent) error {
 	var requestBody struct {
-		ChannelID string   `json:"channel_id"`
-		Message   string   `json:"message"`
-		Usernames []string `json:"usernames"`
+		ChannelIDs []string `json:"channel_ids"`
+		Message    string   `json:"message"`
+		Usernames  []string `json:"usernames"`
 	}
 
 	// Bind request body
@@ -139,17 +138,16 @@ func HandleMattermostPost(c *core.RequestEvent) error {
 	}
 
 	// Validate required fields
-	if requestBody.ChannelID == "" || requestBody.Message == "" {
+	if len(requestBody.ChannelIDs) == 0 || requestBody.Message == "" {
 		return c.JSON(400, map[string]string{
-			"error": "Missing required fields:  channel_id, message are required",
+			"error": "Missing required fields: channel_ids, message are required",
 		})
 	}
 
 	// Call the Mattermost notification function
-	response, err := PostMessageToMattermost(
-		requestBody.ChannelID,
+	responses, err := PostMessageToMattermost(
+		requestBody.ChannelIDs,
 		requestBody.Message,
-		requestBody.Usernames,
 	)
 
 	if err != nil {
@@ -159,14 +157,20 @@ func HandleMattermostPost(c *core.RequestEvent) error {
 		})
 	}
 
+	// Prepare response data
+	var responseData []map[string]string
+	for _, response := range responses {
+		responseData = append(responseData, map[string]string{
+			"message_id": response.ID,
+			"channel_id": response.ChannelID,
+			"created_at": fmt.Sprintf("%d", response.CreateAt),
+		})
+	}
+
 	// Return success response
 	return c.JSON(200, map[string]interface{}{
 		"success": true,
 		"message": "Message posted successfully to Mattermost",
-		"data": map[string]string{
-			"message_id": response.ID,
-			"channel_id": response.ChannelID,
-			"created_at": fmt.Sprintf("%d", response.CreateAt),
-		},
+		"data":    responseData,
 	})
 }
