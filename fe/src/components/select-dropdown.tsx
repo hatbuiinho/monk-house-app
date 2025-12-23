@@ -1,4 +1,5 @@
-import { Loader } from 'lucide-react'
+import type { ForwardRefExoticComponent, RefAttributes } from 'react'
+import { Loader, type LucideProps } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -13,7 +14,16 @@ type SelectDropdownProps = {
   defaultValue: string | undefined
   placeholder?: string
   isPending?: boolean
-  items: { label: string; value: string }[] | undefined
+  items:
+    | {
+        label: string
+        value: string
+        icon?: ForwardRefExoticComponent<
+          Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+        >
+        className?: string
+      }[]
+    | undefined
   disabled?: boolean
   className?: string
   isControlled?: boolean
@@ -47,9 +57,9 @@ export function SelectDropdown({
             </div>
           </SelectItem>
         ) : (
-          items?.map(({ label, value }) => (
+          items?.map(({ label, value, icon: Icon, className }) => (
             <SelectItem key={value} value={value}>
-              {label}
+              {Icon && <Icon className={className} />} {label}
             </SelectItem>
           ))
         )}

@@ -77,7 +77,12 @@ export function TaskCard({
           {status && (
             <div className='flex items-center gap-1 text-sm'>
               {status.icon && (
-                <status.icon className='text-muted-foreground size-3.5' />
+                <status.icon
+                  className={cn(
+                    'text-muted-foreground size-3.5',
+                    status.className
+                  )}
+                />
               )}
               <span>{status.label}</span>
             </div>

@@ -196,7 +196,7 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
 
       <form
         onSubmit={handleSubmit}
-        className='flex w-full flex-none items-center gap-2'
+        className='fixed right-20 bottom-2 left-2 flex flex-none items-center gap-2'
       >
         <div className='border-input bg-card focus-within:ring-ring flex flex-1 items-center gap-2 rounded-md border px-2 py-1 focus-within:ring-1 focus-within:outline-hidden lg:gap-4'>
           {/* TODO: add feature for feedback */}

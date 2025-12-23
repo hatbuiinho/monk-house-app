@@ -33,16 +33,19 @@ export const statuses = [
     label: 'Todo',
     value: 'todo' as const,
     icon: Circle,
+    className: '',
   },
   {
     label: 'In Progress',
     value: 'in_progress' as const,
     icon: Timer,
+    className: 'text-amber-500',
   },
   {
     label: 'Done',
     value: 'done' as const,
     icon: CheckCircle,
+    className: 'text-green-500',
   },
   // {
   //   label: 'Canceled',

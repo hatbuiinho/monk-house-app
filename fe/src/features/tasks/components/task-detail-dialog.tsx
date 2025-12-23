@@ -112,83 +112,76 @@ export function TaskDetailDialog({
 
   return (
     <Dialog modal={false} open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex h-screen max-w-[900px] flex-col rounded-none px-0 pt-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'>
-        <div className='no-scrollbar h-full overflow-y-scroll'>
-          <DialogHeader className='sticky top-0 bg-white pt-3'>
-            <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
-              <div className='text-muted-foreground text-sm'>
-                Task:{' '}
-                <span className='text-foreground font-mono'>
-                  #{currentTask.id}
-                </span>
-              </div>
-              {/* add department name with badge component */}
-              <div className='text-muted-foreground py-2 text-[12px]'>
-                <span className='text-muted-foreground text-sx font-mono'>
-                  {currentTask.departments?.map((department) => {
-                    return typeof department === 'string' ? (
-                      ''
-                    ) : (
-                      <Badge
-                        variant='default'
-                        className='flex items-center gap-1'
-                      >
-                        {department.name}
-                      </Badge>
-                    )
-                  })}
-                </span>
-              </div>
-            </DialogTitle>
-            <Separator />
-          </DialogHeader>
-          {/* Content */}
-          <div className='me-14 flex h-[78dvh] grow px-4 lg:h-[49dvh]'>
-            <div
-              className={cn('no-scrollbar hidden grow overflow-y-scroll', {
-                block: contentTab === 'details',
-              })}
-            >
-              <div className='grid grid-cols-1'>
-                {/* Left column - Task Details */}
-                <div className='space-y-3'>
-                  {/* Task ID and Status */}
+      <DialogContent className='flex h-screen max-w-[900px] rounded-none px-0 pt-0 pb-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'>
+        <div className='grid h-full w-full grid-cols-[1fr_4.5rem]'>
+          <div className='no-scrollbar relative h-full overflow-y-scroll'>
+            <DialogHeader className='sticky top-0 z-50 bg-white pt-3'>
+              <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
+                <div className='text-muted-foreground text-sm'>
+                  Task:{' '}
+                  <span className='text-foreground font-mono'>
+                    #{currentTask.id}
+                  </span>
+                </div>
+                {/* add department name with badge component */}
+                <div className='text-muted-foreground py-2 text-[12px]'>
+                  <span className='text-muted-foreground text-sx font-mono'>
+                    {currentTask.departments?.map((department) => {
+                      return typeof department === 'string' ? (
+                        ''
+                      ) : (
+                        <Badge
+                          variant='default'
+                          className='flex items-center gap-1'
+                        >
+                          {department.name}
+                        </Badge>
+                      )
+                    })}
+                  </span>
+                </div>
+              </DialogTitle>
+              <Separator />
+            </DialogHeader>
+            {/* Content */}
+            <div className='flex h-[78dvh] grow px-4 lg:h-[49dvh]'>
+              <div
+                className={cn('no-scrollbar hidden grow overflow-y-scroll', {
+                  block: contentTab === 'details',
+                })}
+              >
+                <div className='grid grid-cols-1'>
+                  {/* Left column - Task Details */}
+                  <div className='space-y-3'>
+                    {/* Task ID and Status */}
 
-                  <div className='sticky top-0 flex items-center justify-between bg-white py-2'>
-                    {/* Task Title */}
-                    <div>
-                      <h3 className='text-lg leading-tight font-semibold'>
-                        {currentTask.title}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
-                    <div className='flex items-center gap-2'>
-                      {/* <ResponsiveDropdown
-                        defaultValue={currentTask.status as string}
-                        items={statuses}
-                        onChange={(value) => {
-                          onSubmit({ status: value.value })
-                        }}
-                      /> */}
-                      <SelectDropdown
-                        defaultValue={currentTask.status as string}
-                        onValueChange={(value) => {
-                          onSubmit({ status: value })
-                        }}
-                        placeholder='Select status'
-                        items={statuses}
-                      />
-                    </div>
-
-                    {/* Task Assignees */}
-
-                    <div className='flex items-center gap-2'>
+                    <div className='sticky top-0 flex items-center justify-between bg-white py-2'>
+                      {/* Task Title */}
                       <div>
+                        <h3 className='text-lg leading-tight font-semibold'>
+                          {currentTask.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
+                      <div className='flex items-center gap-2'>
+                        <SelectDropdown
+                          defaultValue={currentTask.status as string}
+                          onValueChange={(value) => {
+                            onSubmit({ status: value })
+                          }}
+                          placeholder='Select status'
+                          items={statuses}
+                        />
+                      </div>
+
+                      {/* Task Assignees */}
+
+                      <div className='flex w-full items-center gap-2'>
                         <MultiSelect
                           options={memoizedUsers.map((user) => ({
-                            label: `${user.name} ${user.username}`,
+                            label: `${user.name.trim() || user.username}`,
                             value: user.id,
                             icon: () => (
                               <Avatar>
@@ -215,80 +208,81 @@ export function TaskDetailDialog({
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Task Description */}
-                  <div className='p-2'>
-                    <Separator className='my-2' />
+                    {/* Task Description */}
+                    <div className='p-2'>
+                      <Separator className='my-2' />
 
-                    <div className='text-sm font-medium'>Description</div>
-                    <div>
-                      {currentTask.description ? (
-                        <div
-                          className='prose prose-sm max-w-none text-sm'
-                          dangerouslySetInnerHTML={{
-                            __html: currentTask.description,
-                          }}
-                        />
-                      ) : (
-                        <p className='text-muted-foreground text-sm'>
-                          No description available for this task.
-                        </p>
-                      )}
+                      <div className='text-sm font-medium'>Description</div>
+                      <div>
+                        {currentTask.description ? (
+                          <div
+                            className='prose prose-sm max-w-none text-sm'
+                            dangerouslySetInnerHTML={{
+                              __html: currentTask.description,
+                            }}
+                          />
+                        ) : (
+                          <p className='text-muted-foreground text-sm'>
+                            No description available for this task.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div
-              className={cn('hidden h-full grow', {
-                block: contentTab === 'conversation',
-              })}
-            >
-              {/* Right column - Feedback Conversation */}
-              <div className='h-full'>
-                <h3 className='mb-2 text-lg font-medium'>Conversation</h3>
-                <FeedbackConversation taskId={currentTask.id} />
+              <div
+                className={cn('hidden h-full grow', {
+                  block: contentTab === 'conversation',
+                })}
+              >
+                {/* Right column - Feedback Conversation */}
+                <div className='h-full'>
+                  <h3 className='mb-2 text-lg font-medium'>Conversation</h3>
+                  <FeedbackConversation taskId={currentTask.id} />
+                </div>
               </div>
-            </div>
 
-            {/* <Separator orientation='vertical' /> */}
+              {/* <Separator orientation='vertical' /> */}
+            </div>
           </div>
-        </div>
-        <div className='absolute top-0 right-0 bottom-0 mt-22 flex w-16 flex-col gap-2 border-l px-2 pt-4'>
-          <Button
-            onClick={() => {
-              setContentTab('details')
-            }}
-            variant='outline'
-            className='flex flex-col px-6 py-8'
-          >
-            <div
-              className={cn('rounded p-1', {
-                'bg-gray-200': contentTab === 'details',
-              })}
+          {/* sidebar */}
+          <div className='flex flex-col gap-2 border-l px-2 pt-16'>
+            <Button
+              onClick={() => {
+                setContentTab('details')
+              }}
+              variant='outline'
+              className='flex flex-col px-6 py-8'
             >
-              <Logs />
-            </div>{' '}
-            <span className='text-xs'>Details</span>
-          </Button>
-          <Button
-            onClick={() => {
-              setContentTab('conversation')
-            }}
-            variant='outline'
-            className='flex flex-col px-6 py-8'
-          >
-            <div
-              className={cn('rounded p-1', {
-                'bg-gray-200': contentTab === 'conversation',
-              })}
+              <div
+                className={cn('rounded p-1', {
+                  'bg-gray-200': contentTab === 'details',
+                })}
+              >
+                <Logs />
+              </div>{' '}
+              <span className='text-xs'>Details</span>
+            </Button>
+            <Button
+              onClick={() => {
+                setContentTab('conversation')
+              }}
+              variant='outline'
+              className='flex flex-col px-6 py-8'
             >
-              <MessageSquare />
-            </div>{' '}
-            <span className='text-xs'>Chats</span>
-          </Button>
+              <div
+                className={cn('rounded p-1', {
+                  'bg-gray-200': contentTab === 'conversation',
+                })}
+              >
+                <MessageSquare />
+              </div>{' '}
+              <span className='text-xs'>Chats</span>
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

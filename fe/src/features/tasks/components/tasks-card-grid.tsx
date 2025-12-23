@@ -169,13 +169,13 @@ export function TasksCardGrid({ data }: DataTableProps) {
           column?.setFilterValue(value)
         }}
         defaultValue='todo'
-        className='fixed right-2 bottom-2 left-2 w-full md:hidden'
+        className='fixed right-0 bottom-0 left-0 w-full md:hidden'
       >
         <TabsList className='h-full w-full'>
           {statuses.map((status) => (
             <TabsTrigger key={status.value} value={status.value}>
               {status.icon && (
-                <status.icon className='text-muted-foreground size-4' />
+                <status.icon className={cn('size-4', status.className)} />
               )}
               {status.label}
             </TabsTrigger>
