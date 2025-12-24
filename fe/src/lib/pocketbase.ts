@@ -8,6 +8,71 @@ const pb = new PocketBase(
 // Enable auto-cancellation for requests
 pb.autoCancellation(false)
 
+// Add request interceptor for token validation and auto-refresh
+pb.beforeSend = async (url, options) => {
+  // Skip token validation for auth-related endpoints
+  if (
+    url.includes('/api/admins/auth-with-password') ||
+    url.includes('/api/collections/users/auth-with-password') ||
+    url.includes('/api/collections/users/auth-refresh')
+  ) {
+    return { url, options }
+  }
+
+  // Check if token is valid
+  if (pb.authStore.isValid) {
+    // Check if token is about to expire (within 5 minutes)
+    const token = pb.authStore.token
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const expiresAt = payload.exp * 1000 // Convert to milliseconds
+        const currentTime = Date.now()
+        const bufferTime = 5 * 60 * 1000 // 5 minutes buffer
+
+        // If token is expired or about to expire, try to refresh
+        if (expiresAt <= currentTime + bufferTime) {
+          try {
+            await pb.collection('users').authRefresh()
+            return { url, options }
+          } catch (_refreshError) {
+            // Clear the invalid token and redirect to login
+            pb.authStore.clear()
+            localStorage.removeItem('pb_auth')
+            
+            // Redirect to login page
+            if (typeof window !== 'undefined') {
+              window.location.href = '/sign-in'
+            }
+            
+            // Throw error to stop the original request
+            throw new Error('Session expired. Please login again.')
+          }
+        }
+      } catch (_decodeError) {
+        // If we can't decode the token, it's invalid
+        pb.authStore.clear()
+        localStorage.removeItem('pb_auth')
+        
+        if (typeof window !== 'undefined') {
+          window.location.href = '/sign-in'
+        }
+        
+        throw new Error('Invalid token. Please login again.')
+      }
+    }
+  } else {
+    // No valid token, redirect to login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/sign-in'
+    }
+
+    throw new Error('No valid session. Please login.')
+  }
+
+  return { url, options }
+}
+
 // Authentication state management
 class PocketBaseAuth {
   private static instance: PocketBaseAuth
