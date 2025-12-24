@@ -3,7 +3,14 @@ import { Button } from '@/components/ui/button'
 import { useTasksStore } from '../data/tasks-store'
 
 export function TasksPrimaryButtons() {
-  const { setOpen, tasks } = useTasksStore()
+  const { setOpen, tasks, isLoading, error } = useTasksStore()
+  if (isLoading) {
+    return <p className='text-muted-foreground'>Loading tasks...</p>
+  }
+
+  if (error) {
+    return <p className='text-muted-foreground'>Error loading tasks</p>
+  }
   return (
     <div className='flex w-full items-center justify-between gap-2'>
       {/* <Button
