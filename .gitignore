@@ -12,8 +12,7 @@ dist
 dist-ssr
 *.local
 
-fe/.env
-be/pb/.env
+**/.env
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +27,4 @@ be/pb/.env
 
 #pocketbase
 pb_data/
+**/pocketbase
