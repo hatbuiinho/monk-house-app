@@ -48,6 +48,47 @@ export interface PocketBaseRecord {
   updated?: string
 }
 
+export const buildTasksFilter = (filter?: TaskFilter): string => {
+  const { startDate, endDate, departments } = filter ?? {}
+  const filters: string[] = []
+
+  if (filter?.status) {
+    filters.push(`status = "${filter.status}"`)
+  }
+  if (filter?.priority) {
+    filters.push(`priority = "${filter.priority}"`)
+  }
+  if (filter?.assignee) {
+    filters.push(`assignee = "${filter.assignee}"`)
+  }
+  if (filter?.label) {
+    filters.push(`label = "${filter.label}"`)
+  }
+  if (filter?.search) {
+    filters.push(
+      `(title ~ "${filter.search}" || description ~ "${filter.search}")`
+    )
+  }
+  if (startDate) {
+    filters.push(`created >= "${format(startDate, 'y-MM-dd')}"`)
+  }
+  if (endDate) {
+    filters.push(`created <= "${format(endDate, 'y-MM-dd')}"`)
+  }
+
+  if (departments?.length) {
+    const condition = departments
+      .map((d) => `departments ~ "${d}"`)
+      .join(' || ')
+    filters.push(`(${condition})`)
+  }
+
+  if (filters.length > 0) {
+    return filters.join(' && ')
+  }
+  return ''
+}
+
 export class TasksAPI {
   private collection = pb.collection('tasks')
 
@@ -89,44 +130,12 @@ export class TasksAPI {
       departments,
     } = filter ?? {}
 
-    // Build filter query
-    let query = ''
-    const filters: string[] = []
-
-    if (filter?.status) {
-      filters.push(`status = "${filter.status}"`)
-    }
-    if (filter?.priority) {
-      filters.push(`priority = "${filter.priority}"`)
-    }
-    if (filter?.assignee) {
-      filters.push(`assignee = "${filter.assignee}"`)
-    }
-    if (filter?.label) {
-      filters.push(`label = "${filter.label}"`)
-    }
-    if (filter?.search) {
-      filters.push(
-        `(title ~ "${filter.search}" || description ~ "${filter.search}")`
-      )
-    }
-    if (startDate) {
-      filters.push(`created >= "${format(startDate, 'y-MM-dd')}"`)
-    }
-    if (endDate) {
-      filters.push(`created <= "${format(endDate, 'y-MM-dd')}"`)
-    }
-
-    if (departments?.length) {
-      const condition = departments
-        .map((d) => `departments ~ "${d}"`)
-        .join(' || ')
-      filters.push(`(${condition})`)
-    }
-
-    if (filters.length > 0) {
-      query = filters.join(' && ')
-    }
+    const query = buildTasksFilter({
+      ...filter!,
+      startDate,
+      endDate,
+      departments,
+    })
 
     const result = await this.collection.getList(currentPage, perPage, {
       filter: query,

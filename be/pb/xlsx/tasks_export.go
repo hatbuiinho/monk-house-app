@@ -3,6 +3,7 @@ package xlsx
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	stdhtml "html"
 	"net/http"
 	"os"
@@ -33,14 +34,23 @@ var (
 func HandleTaskExport(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	filter := strings.TrimSpace(c.Request.URL.Query().Get("filter"))
 	exportAll := c.Request.URL.Query().Get("exportAll") == "true"
+	pageParam := c.Request.URL.Query().Get("page")
+	perPageParam := c.Request.URL.Query().Get("perPage")
+	sort := strings.TrimSpace(c.Request.URL.Query().Get("sort"))
 	if exportAll {
 		filter = ""
 	}
-	if !exportAll && filter == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing filter"})
+
+	limit, offset, err := parsePagination(pageParam, perPageParam, exportAll)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	records, err := app.FindRecordsByFilter("tasks", filter, "-created", 0, 0)
+	if sort == "" {
+		sort = "-created"
+	}
+
+	records, err := app.FindRecordsByFilter("tasks", filter, sort, limit, offset)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
@@ -212,4 +222,27 @@ func labelsPath() string {
 		return "labels.json"
 	}
 	return filepath.Join(filepath.Dir(file), "labels.json")
+}
+
+func parsePagination(pageParam string, perPageParam string, exportAll bool) (int, int, error) {
+	if exportAll {
+		return 0, 0, nil
+	}
+
+	if pageParam == "" && perPageParam == "" {
+		return 0, 0, nil
+	}
+
+	page, err := strconv.Atoi(pageParam)
+	if err != nil || page < 1 {
+		return 0, 0, fmt.Errorf("invalid page")
+	}
+
+	perPage, err := strconv.Atoi(perPageParam)
+	if err != nil || perPage < 1 {
+		return 0, 0, fmt.Errorf("invalid perPage")
+	}
+
+	offset := (page - 1) * perPage
+	return perPage, offset, nil
 }

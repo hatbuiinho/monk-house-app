@@ -31,8 +31,6 @@ export function TasksCardGrid({ className }: DataTableProps) {
   } = useTasksStore()
 
   const [selectMode, setSelectMode] = useState(false)
-  // const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  // const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
 
   return (
     <>
@@ -43,7 +41,6 @@ export function TasksCardGrid({ className }: DataTableProps) {
           className
         )}
       >
-        {/* <div className='w-full'> */}
         <DataTableToolbar
           className='w-full'
           searchPlaceholder='Tìm kiếm...'
@@ -62,7 +59,6 @@ export function TasksCardGrid({ className }: DataTableProps) {
             <div className='text-destructive'>Error: {error.message}</div>
           )}
         </div>
-        {/* </div> */}
         <div className={cn({ 'opacity-0': isLoading || error })}>
           {/* Card Grid Layout */}
           <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
