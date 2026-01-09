@@ -2,14 +2,14 @@
 
 root = "."
 testdata_dir = "testdata"
-tmp_dir = "."
+tmp_dir = "./tmp"
 
 [build]
   args_bin = []
-  bin = "./pocketbase"
-  cmd = "go build -o ./pocketbase ."
+  bin = "./tmp/pocketbase"
+  cmd = "go build -o ./tmp/pocketbase ."
   delay = 1000
-  entrypoint = ["./pocketbase"]
+  entrypoint = ["./tmp/pocketbase"]
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go"]

@@ -1,0 +1,14 @@
+{
+  "headers": {
+    "title": "Tiêu đề",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "departments": "Ban",
+    "assignees": "Phụ trách"
+  },
+  "status": {
+    "todo": "Chưa làm",
+    "in_progress": "Đang làm",
+    "done": "Đã xong"
+  }
+}

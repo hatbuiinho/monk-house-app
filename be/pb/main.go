@@ -21,6 +21,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 
 	"be.monk.house/notification"
+	"be.monk.house/xlsx"
 )
 
 // OAuth2 Structures
@@ -176,6 +177,10 @@ func main() {
 		// Existing hello route
 		e.Router.GET("/hello", func(c *core.RequestEvent) error {
 			return c.String(200, "Hello world!")
+		}).Bind(apis.RequireAuth())
+
+		e.Router.GET("/api/export/tasks", func(c *core.RequestEvent) error {
+			return xlsx.HandleTaskExport(app, c)
 		}).Bind(apis.RequireAuth())
 
 		return e.Next()
