@@ -6,7 +6,6 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { UsersDialogs } from './components/users-dialogs'
-import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersTable } from './components/users-table'
 
 const route = getRouteApi('/_authenticated/users/')
@@ -34,7 +33,7 @@ export function Users() {
               Manage your users and their roles here.
             </p>
           </div>
-          <UsersPrimaryButtons />
+          {/* <UsersPrimaryButtons /> */}
         </div>
         <UsersTable search={search} navigate={navigate} />
       </Main>

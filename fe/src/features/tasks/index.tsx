@@ -6,52 +6,18 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { TasksCardGrid } from './components/tasks-card-grid'
 import { TasksDialogs } from './components/tasks-dialogs'
 import { TasksPrimaryButtons } from './components/tasks-primary-buttons'
-import { useTasksStore } from './data/tasks-store'
 
 function TasksContent() {
-  const { isLoading, tasks, error } = useTasksStore()
-
-  if (isLoading) {
-    return (
-      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Tasks</h2>
-          </div>
-          <TasksPrimaryButtons />
-        </div>
-        <div className='flex h-64 items-center justify-center'>
-          <div className='text-muted-foreground'>Loading...</div>
-        </div>
-      </Main>
-    )
-  }
-
-  if (error) {
-    return (
-      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Tasks</h2>
-          </div>
-          <TasksPrimaryButtons />
-        </div>
-        <div className='flex h-64 items-center justify-center'>
-          <div className='text-destructive'>Error: {error.message}</div>
-        </div>
-      </Main>
-    )
-  }
-
   return (
     <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
       <div className='flex flex-wrap items-end justify-between gap-2'>
         <div>
-          <h2 className='text-2xl font-bold tracking-tight'>Tasks</h2>
+          <h2 className='text-2xl font-bold tracking-tight'>Công việc</h2>
         </div>
         <TasksPrimaryButtons />
       </div>
-      <TasksCardGrid data={tasks || []} />
+
+      <TasksCardGrid />
     </Main>
   )
 }

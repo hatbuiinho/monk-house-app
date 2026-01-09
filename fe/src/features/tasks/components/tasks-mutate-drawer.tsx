@@ -28,7 +28,7 @@ import {
   type TaskStatus,
   type TaskUpdate,
 } from '../data/schema'
-import { useTaskQuery } from '../hooks/useTaskQuery'
+import { useTaskQuery } from '../hooks/use-task-query'
 import TaskFormFields from './task-form-fields'
 
 type TaskMutateDrawerProps = {
@@ -120,7 +120,7 @@ export function TasksMutateDrawer({
     // Mobile: Use right sheet
     return (
       <Sheet modal={false} open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side='right' className='flex flex-col w-full md:w-3/4'>
+        <SheetContent side='right' className='flex w-full flex-col md:w-3/4'>
           <SheetHeader className='text-start'>
             <SheetTitle>{title}</SheetTitle>
             <SheetDescription>

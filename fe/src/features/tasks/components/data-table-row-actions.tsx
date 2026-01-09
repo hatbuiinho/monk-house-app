@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
-import { type Row } from '@tanstack/react-table'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,18 +10,14 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { taskSchema } from '../data/schema'
+import type { Task } from '../data/schema'
 import { useTasksStore } from '../data/tasks-store'
 
-type DataTableRowActionsProps<TData> = {
-  row: Row<TData>
+type DataTableRowActionsProps = {
+  task: Task
 }
 
-export function DataTableRowActions<TData>({
-  row,
-}: DataTableRowActionsProps<TData>) {
-  const task = taskSchema.parse(row.original)
-
+export function DataTableRowActions({ task }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useTasksStore()
   const [openMenu, setOpenMenu] = useState(false)
 

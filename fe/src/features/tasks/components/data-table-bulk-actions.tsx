@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { type Table } from '@tanstack/react-table'
 import { CircleArrowUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -17,34 +16,26 @@ import {
 import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
 import { tasksAPI } from '../api/tasks-api'
 import { statuses } from '../data/data'
-import { type Task, type TaskStatus } from '../data/schema'
+import { type TaskStatus } from '../data/schema'
+import { useTasksStore } from '../data/tasks-store'
 import { TasksMultiDeleteDialog } from './tasks-multi-delete-dialog'
 
-type DataTableBulkActionsProps<TData> = {
-  table: Table<TData>
-}
-
-export function DataTableBulkActions<TData>({
-  table,
-}: DataTableBulkActionsProps<TData>) {
+export function DataTableBulkActions() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const selectedRows = table.getFilteredSelectedRowModel().rows
+  const { selectedTasks, clearSelection } = useTasksStore()
 
   const handleBulkStatusChange = (status: string) => {
-    const selectedTasks = selectedRows.map((row) => row.original as Task)
-    const taskIds = selectedTasks.map((task) => task.id)
-
     try {
       toast.promise(
         Promise.all(
-          taskIds.map((taskId) =>
+          selectedTasks.map((taskId) =>
             tasksAPI.updateTask(taskId, { status: status as TaskStatus })
           )
         ),
         {
           loading: 'Updating status...',
           success: () => {
-            table.resetRowSelection()
+            clearSelection()
             return `Status updated to "${status}" for ${selectedTasks.length} task${selectedTasks.length > 1 ? 's' : ''}.`
           },
           error: () => 'Failed to update status',
@@ -85,7 +76,7 @@ export function DataTableBulkActions<TData>({
 
   return (
     <>
-      <BulkActionsToolbar table={table} entityName='task'>
+      <BulkActionsToolbar entityName='task'>
         <DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -200,7 +191,6 @@ export function DataTableBulkActions<TData>({
       <TasksMultiDeleteDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
-        table={table}
       />
     </>
   )

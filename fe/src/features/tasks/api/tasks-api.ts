@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { type RecordModel } from 'pocketbase'
 import { pb } from '@/lib/pocketbase'
 import { type Department } from '@/features/departments/data/schema'
@@ -79,9 +80,14 @@ export class TasksAPI {
     perPage: number
     totalPages: number
   }> {
-    const page = filter?.page || 1
-    const perPage = filter?.perPage || 20
-    const sort = filter?.sort || '-created'
+    const {
+      startDate,
+      endDate,
+      page = 1,
+      perPage = 20,
+      sort = '-created',
+      departments,
+    } = filter ?? {}
 
     // Build filter query
     let query = ''
@@ -103,6 +109,19 @@ export class TasksAPI {
       filters.push(
         `(title ~ "${filter.search}" || description ~ "${filter.search}")`
       )
+    }
+    if (startDate) {
+      filters.push(`created >= "${format(startDate, 'y-MM-dd')}"`)
+    }
+    if (endDate) {
+      filters.push(`created <= "${format(endDate, 'y-MM-dd')}"`)
+    }
+
+    if (departments?.length) {
+      const condition = departments
+        .map((d) => `departments ~ "${d}"`)
+        .join(' || ')
+      filters.push(`(${condition})`)
     }
 
     if (filters.length > 0) {

@@ -49,7 +49,9 @@ function OAuthCallback() {
           // Set user and access token in the auth store
           pb.authStore.save(data.token, data.user)
 
-          toast.success(`Welcome, ${data.user.name || data.user.email}!`)
+          toast.success(
+            `Welcome, ${data.user.name?.trim() || data.user.username}!`
+          )
 
           // Redirect to the dashboard
           navigate({ to: redirect ?? '/', replace: true })

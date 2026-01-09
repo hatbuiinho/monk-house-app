@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
-import { type Table } from '@tanstack/react-table'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -10,9 +9,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useTasksStore } from '@/features/tasks/data/tasks-store'
 
-type DataTableBulkActionsProps<TData> = {
-  table: Table<TData>
+type DataTableBulkActionsProps = {
   entityName: string
   children: React.ReactNode
 }
@@ -27,13 +26,12 @@ type DataTableBulkActionsProps<TData> = {
  * @param {React.ReactNode} props.children The action buttons to be rendered inside the toolbar.
  * @returns {React.ReactNode | null} The rendered component or null if no rows are selected.
  */
-export function DataTableBulkActions<TData>({
-  table,
+export function DataTableBulkActions({
   entityName,
   children,
-}: DataTableBulkActionsProps<TData>): React.ReactNode | null {
-  const selectedRows = table.getFilteredSelectedRowModel().rows
-  const selectedCount = selectedRows.length
+}: DataTableBulkActionsProps): React.ReactNode | null {
+  const { selectedTasks, clearSelection } = useTasksStore()
+  const selectedCount = selectedTasks.length
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [announcement, setAnnouncement] = useState('')
 
@@ -54,7 +52,7 @@ export function DataTableBulkActions<TData>({
   }, [selectedCount, entityName])
 
   const handleClearSelection = () => {
-    table.resetRowSelection()
+    clearSelection()
   }
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -152,7 +150,7 @@ export function DataTableBulkActions<TData>({
           className={cn(
             'p-2 shadow-xl',
             'rounded-xl border',
-            'bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur-lg',
+            'bg-background/95 supports-backdrop-filter:bg-background/60 backdrop-blur-lg',
             'flex items-center gap-x-2'
           )}
         >

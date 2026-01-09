@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useState } from 'react'
 import { Logs, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Separator } from '@/components/ui/separator'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { Spinner } from '@/components/ui/spinner'
 import { FeedbackConversation } from '@/features/feedbacks/components/feedback-conversation'
 import { useUserQuery } from '@/features/users/hooks/useUserQuery'
 import { tasksAPI } from '../api/tasks-api'
@@ -23,29 +25,29 @@ import {
   type TaskStatus,
   type TaskUpdate,
 } from '../data/schema'
-import { useTaskQuery } from '../hooks/useTaskQuery'
+import { useTasksStore } from '../data/tasks-store'
+import { useTaskQuery } from '../hooks/use-task-query'
 
 type TaskDetailDialogProps = {
   task?: Task
   taskId?: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  // open: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function TaskDetailDialog({
-  task,
   taskId,
-  open,
+  // open,
   onOpenChange,
 }: TaskDetailDialogProps) {
   const { users, isLoading: userLoading } = useUserQuery()
+  const { currentTask, setCurrentTask } = useTasksStore()
   const { updateTask } = useTaskQuery()
   const [fetchedTask, setFetchedTask] = useState<Task | null>(null)
   const [_isLoading, setIsLoading] = useState(false)
-  const [currentTask, setCurrentTask] = useState(task)
+  // const [currentTask, setCurrentTask] = useState(task)
   const [contentTab, setContentTab] = useState('details')
-
-  // Determine which task to use - either the prop or the fetched one
+  const [nonNullTask, setNonNullTask] = useState(currentTask! || {})
 
   useEffect(() => {
     if (taskId) {
@@ -62,13 +64,19 @@ export function TaskDetailDialog({
       }
       fetchTask()
     }
-  }, [taskId])
+  }, [])
 
   useEffect(() => {
     if (fetchedTask) {
-      setCurrentTask({ ...task, ...fetchedTask })
+      setCurrentTask({ ...currentTask, ...fetchedTask })
     }
-  }, [fetchedTask, task])
+  }, [fetchedTask])
+
+  useEffect(() => {
+    if (currentTask) {
+      setNonNullTask(currentTask)
+    }
+  }, [currentTask])
 
   const memoizedUsers = useMemo(() => users, [users])
 
@@ -84,7 +92,10 @@ export function TaskDetailDialog({
           assignees: data.assignees as string[],
           due_date: dueDate,
         }
-        await updateTask(taskId, updateData)
+        setIsLoading(true)
+        await updateTask(taskId, updateData).then(() => {
+          setIsLoading(false)
+        })
       }
     } catch (error) {
       //TODO: Error handling is done in the provider
@@ -93,17 +104,16 @@ export function TaskDetailDialog({
     }
   }
 
-  // const label = labels.find((label) => label.value === task.label)
-  // const priority = priorities.find(
-  //   (priority) => priority.value === task.priority
-  // )
-
   if (!currentTask) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={true}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Loading task...</DialogTitle>
+            <DialogTitle>
+              <div className='flex gap-2'>
+                <div>Đang tải</div> <Spinner />{' '}
+              </div>
+            </DialogTitle>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -111,200 +121,200 @@ export function TaskDetailDialog({
   }
 
   return (
-    <Dialog modal={false} open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='flex h-screen max-w-[900px] rounded-none px-0 pt-0 pb-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'>
-        <div className='grid h-full w-full grid-cols-[1fr_4.5rem]'>
-          <div className='no-scrollbar relative h-full overflow-y-scroll'>
-            <DialogHeader className='sticky top-0 z-50 bg-white pt-3'>
-              <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
-                <div className='text-muted-foreground text-sm'>
-                  Task:{' '}
-                  <span className='text-foreground font-mono'>
-                    #{currentTask.id}
-                  </span>
-                </div>
-                {/* add department name with badge component */}
-                <div className='text-muted-foreground py-2 text-[12px]'>
-                  <span className='text-muted-foreground text-sx font-mono'>
-                    {currentTask.departments?.map((department) => {
-                      return typeof department === 'string' ? (
-                        ''
-                      ) : (
-                        <Badge
-                          variant='default'
-                          className='flex items-center gap-1'
-                        >
-                          {department.name}
-                        </Badge>
-                      )
-                    })}
-                  </span>
-                </div>
-              </DialogTitle>
-              <Separator />
-            </DialogHeader>
-            {/* Content */}
-            <div className='flex h-[78dvh] grow px-4 lg:h-[49dvh]'>
-              <div
-                className={cn('no-scrollbar hidden grow overflow-y-scroll', {
-                  block: contentTab === 'details',
-                })}
-              >
-                <div className='grid grid-cols-1'>
-                  {/* Left column - Task Details */}
-                  <div className='space-y-3'>
-                    {/* Task ID and Status */}
-
-                    <div className='sticky top-0 flex items-center justify-between bg-white py-2'>
-                      {/* Task Title */}
-                      <div>
-                        <h3 className='text-lg leading-tight font-semibold'>
-                          {currentTask.title}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
-                      <div className='flex items-center gap-2'>
-                        <SelectDropdown
-                          defaultValue={currentTask.status as string}
-                          onValueChange={(value) => {
-                            onSubmit({ status: value })
-                          }}
-                          placeholder='Select status'
-                          items={statuses}
-                        />
-                      </div>
-
-                      {/* Task Assignees */}
-
-                      <div className='flex w-full items-center gap-2'>
-                        <MultiSelect
-                          options={memoizedUsers.map((user) => ({
-                            label: `${user.name.trim() || user.username}`,
-                            value: user.id,
-                            icon: () => (
-                              <Avatar>
-                                <AvatarImage
-                                  src={user.avatar_url}
-                                  alt={user.name}
-                                />
-                                <AvatarFallback>PQ</AvatarFallback>
-                              </Avatar>
-                            ),
-                          }))}
-                          defaultValue={currentTask.assignees as string[]}
-                          onValueChange={(value) => {
-                            onSubmit({ assignees: value })
-                          }}
-                          placeholder={
-                            userLoading
-                              ? 'Loading users...'
-                              : 'Select assignees'
-                          }
-                          disabled={userLoading}
-                          hideCaret
-                          className='bg-white shadow-none outline-0 hover:bg-gray-100'
-                        />
-                      </div>
-                    </div>
-
-                    {/* Task Description */}
-                    <div className='p-2'>
-                      <Separator className='my-2' />
-
-                      <div className='text-sm font-medium'>Description</div>
-                      <div>
-                        {currentTask.description ? (
-                          <div
-                            className='prose prose-sm max-w-none text-sm'
-                            dangerouslySetInnerHTML={{
-                              __html: currentTask.description,
-                            }}
-                          />
+    <Dialog
+      modal={false}
+      open={!!currentTask}
+      onOpenChange={(open) => {
+        setCurrentTask(null)
+        onOpenChange?.(open)
+      }}
+    >
+      {
+        <DialogContent
+          className={cn(
+            'flex h-dvh max-w-[900px] rounded-none px-0 pt-0 pb-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'
+          )}
+        >
+          <div className='grid h-full w-full grid-cols-[1fr_4.5rem]'>
+            <div className='no-scrollbar relative h-full overflow-y-scroll'>
+              <DialogHeader className='sticky top-0 z-50 bg-white pt-3'>
+                <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
+                  <div className='text-muted-foreground text-sm'>
+                    Task:{' '}
+                    <span className='text-foreground font-mono'>
+                      #{nonNullTask.id}
+                    </span>
+                  </div>
+                  {/* add department name with badge component */}
+                  <div className='text-muted-foreground py-2 text-[12px]'>
+                    <span className='text-muted-foreground text-sx font-mono'>
+                      {nonNullTask.departments?.map((department) => {
+                        return typeof department === 'string' ? (
+                          ''
                         ) : (
-                          <p className='text-muted-foreground text-sm'>
-                            No description available for this task.
-                          </p>
-                        )}
+                          <Badge
+                            variant='default'
+                            className='flex items-center gap-1'
+                          >
+                            {department.name}
+                          </Badge>
+                        )
+                      })}
+                    </span>
+                  </div>
+                </DialogTitle>
+                <Separator />
+              </DialogHeader>
+              {/* Content */}
+              <div className='flex h-[78dvh] grow px-4 lg:h-[49dvh]'>
+                <div
+                  className={cn('no-scrollbar hidden grow overflow-y-scroll', {
+                    block: contentTab === 'details',
+                  })}
+                >
+                  <div className='grid grid-cols-1'>
+                    {/* Left column - Task Details */}
+                    <div className='space-y-3'>
+                      {/* Task ID and Status */}
+
+                      <div className='sticky top-0 flex items-center justify-between bg-white py-2'>
+                        {/* Task Title */}
+                        <div>
+                          <h3 className='text-lg leading-tight font-semibold'>
+                            {nonNullTask.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
+                        <div className='flex w-full items-center gap-2'>
+                          <ButtonGroup className=''>
+                            {statuses.map((status) => (
+                              <Button
+                                key={status.value}
+                                variant={
+                                  status.value === nonNullTask.status
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                onClick={() => {
+                                  onSubmit({ status: status.value })
+                                }}
+                              >
+                                {<status.icon className={status.className} />}{' '}
+                                {status.label}
+                              </Button>
+                            ))}
+                          </ButtonGroup>
+                          {_isLoading && <Spinner className='size-5' />}
+                        </div>
+
+                        {/* Task Assignees */}
+
+                        <div className='flex w-full items-center gap-2'>
+                          <MultiSelect
+                            options={memoizedUsers.map((user) => ({
+                              label: `${user.name.trim() || user.username}`,
+                              value: user.id,
+                              icon: () => (
+                                <Avatar>
+                                  <AvatarImage
+                                    src={user.avatar_url}
+                                    alt={user.name}
+                                  />
+                                  <AvatarFallback>PQ</AvatarFallback>
+                                </Avatar>
+                              ),
+                            }))}
+                            defaultValue={nonNullTask.assignees as string[]}
+                            onValueChange={(value) => {
+                              onSubmit({ assignees: value })
+                            }}
+                            placeholder={userLoading ? 'Đang tải' : 'Phân công'}
+                            disabled={userLoading}
+                            hideCaret
+                            className='bg-white shadow-none outline-0 hover:bg-gray-100'
+                          />
+                        </div>
+                      </div>
+
+                      {/* Task Description */}
+                      <div className='p-2'>
+                        <Separator className='my-2' />
+
+                        <div className='text-sm font-medium'>Mô tả</div>
+                        <div>
+                          {nonNullTask.description ? (
+                            <div
+                              className='prose prose-sm max-w-none text-sm'
+                              dangerouslySetInnerHTML={{
+                                __html: nonNullTask.description,
+                              }}
+                            />
+                          ) : (
+                            <p className='text-muted-foreground text-sm'>
+                              Chưa có mô tả
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div
-                className={cn('hidden h-full grow', {
-                  block: contentTab === 'conversation',
-                })}
-              >
-                {/* Right column - Feedback Conversation */}
-                <div className='h-full'>
-                  <h3 className='mb-2 text-lg font-medium'>Conversation</h3>
-                  <FeedbackConversation taskId={currentTask.id} />
+                <div
+                  className={cn('hidden h-full grow', {
+                    block: contentTab === 'conversation',
+                  })}
+                >
+                  {/* Right column - Feedback Conversation */}
+                  <div className='h-full'>
+                    <h3 className='mb-2 text-lg font-medium'>Conversation</h3>
+                    <FeedbackConversation taskId={nonNullTask.id} />
+                  </div>
                 </div>
-              </div>
 
-              {/* <Separator orientation='vertical' /> */}
+                {/* <Separator orientation='vertical' /> */}
+              </div>
+            </div>
+            {/* sidebar */}
+            <div className='flex flex-col gap-2 border-l px-2 pt-16'>
+              <Button
+                onClick={() => {
+                  setContentTab('details')
+                }}
+                variant='outline'
+                className='flex flex-col px-6 py-8'
+              >
+                <div
+                  className={cn('rounded p-1', {
+                    'bg-gray-200': contentTab === 'details',
+                  })}
+                >
+                  <Logs />
+                </div>{' '}
+                <span className='text-xs'>Details</span>
+              </Button>
+              <Button
+                onClick={() => {
+                  setContentTab('conversation')
+                }}
+                variant='outline'
+                className='flex flex-col px-6 py-8'
+              >
+                <div
+                  className={cn('rounded p-1', {
+                    'bg-gray-200': contentTab === 'conversation',
+                  })}
+                >
+                  <MessageSquare />
+                </div>{' '}
+                <span className='text-xs'>Chats</span>
+              </Button>
             </div>
           </div>
-          {/* sidebar */}
-          <div className='flex flex-col gap-2 border-l px-2 pt-16'>
-            <Button
-              onClick={() => {
-                setContentTab('details')
-              }}
-              variant='outline'
-              className='flex flex-col px-6 py-8'
-            >
-              <div
-                className={cn('rounded p-1', {
-                  'bg-gray-200': contentTab === 'details',
-                })}
-              >
-                <Logs />
-              </div>{' '}
-              <span className='text-xs'>Details</span>
-            </Button>
-            <Button
-              onClick={() => {
-                setContentTab('conversation')
-              }}
-              variant='outline'
-              className='flex flex-col px-6 py-8'
-            >
-              <div
-                className={cn('rounded p-1', {
-                  'bg-gray-200': contentTab === 'conversation',
-                })}
-              >
-                <MessageSquare />
-              </div>{' '}
-              <span className='text-xs'>Chats</span>
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
+        </DialogContent>
+      }
     </Dialog>
   )
-  // <DialogHeader className='sticky top-0 bg-white pt-6'>
-  //   <DialogTitle className='text-left text-lg'>
-  //     <div>Task Details</div>
-
-  //     <div className='text-muted-foreground text-[12px]'>
-  //       Task ID:{' '}
-  //       <span className='text-foreground text-sx font-mono'>
-  //         #{task.id}
-  //       </span>
-  //     </div>
-  //   </DialogTitle>
-  // </DialogHeader>
-  // {
-  /* {status && (
-          <Badge variant='outline' className='flex items-center gap-1'>
-            {status.icon && <status.icon className='h-3 w-3' />}
-            {status.label}
-          </Badge>
-        )} */
-  // }
 }

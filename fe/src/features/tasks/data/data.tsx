@@ -30,19 +30,19 @@ export const statuses = [
   //   icon: HelpCircle,
   // },
   {
-    label: 'Todo',
+    label: 'Chưa làm',
     value: 'todo' as const,
     icon: Circle,
     className: '',
   },
   {
-    label: 'In Progress',
+    label: 'Đang làm',
     value: 'in_progress' as const,
     icon: Timer,
     className: 'text-amber-500',
   },
   {
-    label: 'Done',
+    label: 'Đã xong',
     value: 'done' as const,
     icon: CheckCircle,
     className: 'text-green-500',

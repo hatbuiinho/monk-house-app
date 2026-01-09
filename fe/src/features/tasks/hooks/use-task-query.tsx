@@ -14,14 +14,13 @@ export const useTaskQuery = () => {
   const {
     setTasks,
     setTotalItems,
-    setPerPage,
     setTotalPages,
     setIsLoading,
     setError,
     // setStats,
     filters,
     setOpen,
-    setCurrentRow,
+    setCurrentTask,
   } = useTasksStore()
 
   // Query for tasks
@@ -29,18 +28,18 @@ export const useTaskQuery = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['tasks', filters],
     queryFn: () => tasksAPI.getTasks(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    // enabled: false,
+    // staleTime: 0 * 60 * 1000, // 5 minutes
+    gcTime: 0 * 60 * 1000, // 10 minutes
   })
 
   useEffect(() => {
     setTasks(data?.items ?? [])
     setTotalItems(data?.totalItems ?? 0)
-    setPerPage(data?.perPage ?? 10)
+    // setPerPage(data?.perPage ?? 10)
     setTotalPages(data?.totalPages ?? 1)
     setIsLoading(isLoading)
     setError(isError ? new Error('Failed to fetch tasks') : null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, isLoading, isError])
 
   //TODO: Query for statistics
@@ -73,9 +72,9 @@ export const useTaskQuery = () => {
         due_date?: string
       }>
     }) => tasksAPI.updateTask(id, task),
-    onSuccess: () => {
-      setOpen(null)
-      setCurrentRow(null)
+    onSuccess: (data) => {
+      // setOpen(null)
+      setCurrentTask(data)
     },
     onError: (error: TaskError) => {
       toast.error(error.message || 'Failed to update task')
@@ -88,7 +87,7 @@ export const useTaskQuery = () => {
     onSuccess: () => {
       toast.success('Task deleted successfully')
       setOpen(null)
-      setCurrentRow(null)
+      setCurrentTask(null)
     },
     onError: (error: TaskError) => {
       toast.error(error.message || 'Failed to delete task')

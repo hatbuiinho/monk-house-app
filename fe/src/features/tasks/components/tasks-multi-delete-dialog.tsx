@@ -1,7 +1,4 @@
-'use client'
-
 import { useState } from 'react'
-import { type Table } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -9,24 +6,21 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { tasksAPI } from '../api/tasks-api'
-import { type Task } from '../data/schema'
+import { useTasksStore } from '../data/tasks-store'
 
-type TaskMultiDeleteDialogProps<TData> = {
+type TaskMultiDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  table: Table<TData>
 }
 
 const CONFIRM_WORD = 'DELETE'
 
-export function TasksMultiDeleteDialog<TData>({
+export function TasksMultiDeleteDialog({
   open,
   onOpenChange,
-  table,
-}: TaskMultiDeleteDialogProps<TData>) {
+}: TaskMultiDeleteDialogProps) {
   const [value, setValue] = useState('')
-
-  const selectedRows = table.getFilteredSelectedRowModel().rows
+  const { selectedTasks, clearSelection } = useTasksStore()
 
   const handleDelete = async () => {
     if (value.trim() !== CONFIRM_WORD) {
@@ -34,18 +28,15 @@ export function TasksMultiDeleteDialog<TData>({
       return
     }
 
-    const selectedTasks = selectedRows.map((row) => row.original as Task)
-    const taskIds = selectedTasks.map((task) => task.id)
-
     onOpenChange(false)
 
     try {
-      toast.promise(tasksAPI.deleteTasks(taskIds), {
+      toast.promise(tasksAPI.deleteTasks(selectedTasks), {
         loading: 'Deleting tasks...',
         success: () => {
-          table.resetRowSelection()
-          return `Deleted ${selectedRows.length} ${
-            selectedRows.length > 1 ? 'tasks' : 'task'
+          clearSelection()
+          return `Deleted ${selectedTasks.length} ${
+            selectedTasks.length > 1 ? 'tasks' : 'task'
           }`
         },
         error: () => 'Failed to delete tasks',
@@ -69,8 +60,8 @@ export function TasksMultiDeleteDialog<TData>({
             className='stroke-destructive me-1 inline-block'
             size={18}
           />{' '}
-          Delete {selectedRows.length}{' '}
-          {selectedRows.length > 1 ? 'tasks' : 'task'}
+          Delete {selectedTasks.length}{' '}
+          {selectedTasks.length > 1 ? 'tasks' : 'task'}
         </span>
       }
       desc={

@@ -6,7 +6,6 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { callTypes } from '../data/data'
 import { type User } from '../data/schema'
-import { DataTableRowActions } from './data-table-row-actions'
 
 export const usersColumns: ColumnDef<User>[] = [
   {
@@ -63,15 +62,15 @@ export const usersColumns: ColumnDef<User>[] = [
     },
     meta: { className: 'w-36' },
   },
-  {
-    accessorKey: 'email',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Email' />
-    ),
-    cell: ({ row }) => (
-      <div className='w-fit ps-2 text-nowrap'>{row.getValue('email')}</div>
-    ),
-  },
+  // {
+  //   accessorKey: 'email',
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title='Email' />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <div className='w-fit ps-2 text-nowrap'>{row.getValue('email')}</div>
+  //   ),
+  // },
   {
     accessorKey: 'phoneNumber',
     header: ({ column }) => (
@@ -130,8 +129,8 @@ export const usersColumns: ColumnDef<User>[] = [
   //   enableSorting: false,
   //   enableHiding: false,
   // },
-  {
-    id: 'actions',
-    cell: DataTableRowActions,
-  },
+  // {
+  //   id: 'actions',
+  //   cell: DataTableRowActions,
+  // },
 ]

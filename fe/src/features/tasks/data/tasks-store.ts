@@ -1,25 +1,15 @@
+import { addDays } from 'date-fns'
 import { create } from 'zustand'
-import type { Task, TaskStatus, TaskPriority } from './schema'
+import type { Task, TaskFilter } from './schema'
 
 type TasksDialogType = 'create' | 'update' | 'delete' | 'import'
-
-export type TasksFilter = {
-  page?: number
-  perPage?: number
-  sort?: string
-  status?: TaskStatus
-  priority?: TaskPriority
-  assignee?: string
-  label?: string
-  search?: string
-}
 
 type TasksStore = {
   // Dialog state
   open: TasksDialogType | null
   setOpen: (str: TasksDialogType | null) => void
-  currentRow: Task | null
-  setCurrentRow: (task: Task | null) => void
+  currentTask: Task | null
+  setCurrentTask: (task: Task | null) => void
 
   // Data and loading states
   tasks: Task[]
@@ -32,17 +22,22 @@ type TasksStore = {
   // Pagination
   totalItems: number
   setTotalItems: (totalItems: number) => void
-  currentPage: number
-  setCurrentPage: (currentPage: number) => void
-  perPage: number
-  setPerPage: (perPage: number) => void
+  // perPage: number
+  // setPerPage: (perPage: number) => void
   totalPages: number
   setTotalPages: (totalPages: number) => void
 
   // Filtering
-  filters: TasksFilter
-  setFilters: (filters: TasksFilter) => void
+  filters: TaskFilter
+  setFilters: (filters: Partial<TaskFilter>) => void
   clearFilters: () => void
+
+  // Selection
+  selectedTasks: string[]
+  toggleTaskSelection: (taskId: string) => void
+  selectAllTasks: () => void
+  clearSelection: () => void
+  setSelectedTasks: (taskIds: string[]) => void
 
   // Statistics
   stats:
@@ -81,12 +76,14 @@ type TasksStore = {
   setRefetchStats: (refetchStats: () => void) => void
 }
 
-export const useTasksStore = create<TasksStore>((set) => ({
+export const useTasksStore = create<TasksStore>((set, get) => ({
   // Dialog state
   open: null,
   setOpen: (str) => set({ open: str }),
-  currentRow: null,
-  setCurrentRow: (task) => set({ currentRow: task }),
+  currentTask: null,
+  setCurrentTask: (task) => {
+    set({ currentTask: task })
+  },
 
   // Data and loading states
   tasks: [],
@@ -99,10 +96,7 @@ export const useTasksStore = create<TasksStore>((set) => ({
   // Pagination
   totalItems: 0,
   setTotalItems: (totalItems) => set({ totalItems }),
-  currentPage: 1,
-  setCurrentPage: (currentPage) => set({ currentPage }),
-  perPage: 20,
-  setPerPage: (perPage) => set({ perPage }),
+  // setPerPage: (perPage) => set({ perPage }),
   totalPages: 1,
   setTotalPages: (totalPages) => set({ totalPages }),
 
@@ -110,17 +104,43 @@ export const useTasksStore = create<TasksStore>((set) => ({
 
   // Filtering
   filters: {
-    page: 1,
-    perPage: 20,
+    currentPage: 1,
+    perPage: 12,
     sort: '-created',
+    startDate: new Date(),
+    endDate: addDays(new Date(), 1),
   },
-  setFilters: (filters) => set({ filters }),
+  setFilters: (filters) => {
+    const { filters: oldFilters } = get()
+    set({ filters: { ...oldFilters, ...filters } })
+  },
   clearFilters: () =>
-    set({ filters: { page: 1, perPage: 20, sort: '-created' } }),
+    set({
+      filters: {
+        currentPage: 1,
+        perPage: 12,
+        sort: '-created',
+      },
+    }),
 
   // Statistics
   stats: undefined,
   setStats: (stats) => set({ stats }),
   refetchStats: () => {},
   setRefetchStats: (refetchStats) => set({ refetchStats }),
+
+  // Selection
+  selectedTasks: [],
+  toggleTaskSelection: (taskId: string) =>
+    set((state) => ({
+      selectedTasks: state.selectedTasks.includes(taskId)
+        ? state.selectedTasks.filter((id) => id !== taskId)
+        : [...state.selectedTasks, taskId],
+    })),
+  selectAllTasks: () =>
+    set((state) => ({
+      selectedTasks: state.tasks.map((task) => task.id),
+    })),
+  clearSelection: () => set({ selectedTasks: [] }),
+  setSelectedTasks: (taskIds: string[]) => set({ selectedTasks: taskIds }),
 }))

@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
-import type {
-  ColumnFiltersState,
-  OnChangeFn,
-  PaginationState,
-} from '@tanstack/react-table'
+import { useEffect, useMemo } from 'react'
+import { format } from 'date-fns'
+import type { OnChangeFn, PaginationState } from '@tanstack/react-table'
+import { type TaskFilter } from '@/features/tasks/data/schema'
+import { useTasksStore } from '@/features/tasks/data/tasks-store'
 
-type SearchRecord = Record<string, unknown>
+export type SearchRecord = Record<string, unknown>
+
+type Factory<T> = T | (() => T)
 
 export type NavigateFn = (opts: {
   search:
@@ -24,14 +25,9 @@ type UseTableUrlStateParams = {
     defaultPage?: number
     defaultPageSize?: number
   }
-  globalFilter?: {
-    enabled?: boolean
-    key?: string
-    trim?: boolean
-  }
   columnFilters?: Array<
     | {
-        columnId: string
+        columnId: keyof TaskFilter
         searchKey: string
         type?: 'string'
         // Optional transformers for custom types
@@ -39,16 +35,23 @@ type UseTableUrlStateParams = {
         deserialize?: (value: unknown) => unknown
       }
     | {
-        columnId: string
+        columnId: keyof TaskFilter
         searchKey: string
         type: 'array'
         serialize?: (value: unknown) => unknown
         deserialize?: (value: unknown) => unknown
       }
     | {
-        columnId: string
+        columnId: keyof TaskFilter
         searchKey: string
         type: 'date'
+        serialize?: (value: unknown) => unknown
+        deserialize?: (value: unknown) => unknown
+      }
+    | {
+        columnId: keyof TaskFilter
+        searchKey: string
+        type: 'date_range'
         serialize?: (value: unknown) => unknown
         deserialize?: (value: unknown) => unknown
       }
@@ -56,12 +59,8 @@ type UseTableUrlStateParams = {
 }
 
 type UseTableUrlStateReturn = {
-  // Global filter
-  globalFilter?: string
-  onGlobalFilterChange?: OnChangeFn<string>
-  // Column filters
-  columnFilters: ColumnFiltersState
-  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
+  // columnFilters: ColumnFiltersState
+  onFiltersChange: (updater: Factory<Partial<TaskFilter>>) => void
   // Pagination
   pagination: PaginationState
   onPaginationChange: OnChangeFn<PaginationState>
@@ -79,48 +78,82 @@ export function useTableUrlState(
     search,
     navigate,
     pagination: paginationCfg,
-    globalFilter: globalFilterCfg,
     columnFilters: columnFiltersCfg = [],
   } = params
+  // console.log('search', search)
+  const { setFilters } = useTasksStore()
 
   const pageKey = paginationCfg?.pageKey ?? ('page' as string)
   const pageSizeKey = paginationCfg?.pageSizeKey ?? ('pageSize' as string)
   const defaultPage = paginationCfg?.defaultPage ?? 1
   const defaultPageSize = paginationCfg?.defaultPageSize ?? 10
 
-  const globalFilterKey = globalFilterCfg?.key ?? ('filter' as string)
-  const globalFilterEnabled = globalFilterCfg?.enabled ?? true
-  const trimGlobal = globalFilterCfg?.trim ?? true
+  const onFiltersChange: (updater: Factory<Partial<TaskFilter>>) => void = (
+    updater
+  ) => {
+    const next = typeof updater === 'function' ? updater() : updater
+
+    const patch: Record<string, unknown> = {}
+
+    for (const cfg of columnFiltersCfg) {
+      const found = next[cfg.columnId]
+      const serialize = cfg.serialize ?? ((v: unknown) => v)
+      if (cfg.type === 'string') {
+        const value = typeof found === 'string' ? (found as string) : ''
+        patch[cfg.searchKey] =
+          value.trim() !== '' ? serialize(value) : undefined
+      } else if (cfg.type === 'date') {
+        const rawValue = found
+        const value =
+          typeof rawValue === 'object'
+            ? format(rawValue as Date, 'y-MM-dd')
+            : undefined
+        patch[cfg.searchKey] = value
+      } else {
+        const value = Array.isArray(found) ? (found as unknown[]) : []
+        patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
+      }
+    }
+    navigate({
+      search: (prev) => ({
+        ...(prev as SearchRecord),
+        [pageKey]: undefined,
+        ...patch,
+      }),
+    })
+  }
 
   // Build initial column filters from the current search params
-  const initialColumnFilters: ColumnFiltersState = useMemo(() => {
-    const collected: ColumnFiltersState = []
+  useEffect(() => {
+    let convertedSearch = {} as TaskFilter
     for (const cfg of columnFiltersCfg) {
       const raw = (search as SearchRecord)[cfg.searchKey]
       const deserialize = cfg.deserialize ?? ((v: unknown) => v)
       if (cfg.type === 'string') {
         const value = (deserialize(raw) as string) ?? ''
         if (typeof value === 'string' && value.trim() !== '') {
-          collected.push({ id: cfg.columnId, value })
+          convertedSearch = { ...convertedSearch, [cfg.columnId]: value }
         }
       } else if (cfg.type === 'date') {
-        const value = raw ? (new Date(raw as string) as Date) : new Date()
+        const value = raw ? (new Date(raw as string) as Date) : undefined
         if (value) {
-          collected.push({ id: cfg.columnId, value })
+          convertedSearch = { ...convertedSearch, [cfg.columnId]: value }
         }
       } else {
         // default to array type
         const value = (deserialize(raw) as unknown[]) ?? []
         if (Array.isArray(value) && value.length > 0) {
-          collected.push({ id: cfg.columnId, value })
+          convertedSearch = { ...convertedSearch, [cfg.columnId]: value }
         }
       }
     }
-    return collected
-  }, [columnFiltersCfg, search])
+    setTimeout(() => {
+      setFilters({ ...convertedSearch })
+    }, 0)
+  }, []) //TODO: recheck
 
-  const [columnFilters, setColumnFilters] =
-    useState<ColumnFiltersState>(initialColumnFilters)
+  // const [columnFilters, setColumnFilters] =
+  //   useState<ColumnFiltersState>(initialColumnFilters)
 
   const pagination: PaginationState = useMemo(() => {
     const rawPage = (search as SearchRecord)[pageKey]
@@ -145,70 +178,6 @@ export function useTableUrlState(
     })
   }
 
-  const [globalFilter, setGlobalFilter] = useState<string | undefined>(() => {
-    if (!globalFilterEnabled) return undefined
-    const raw = (search as SearchRecord)[globalFilterKey]
-    return typeof raw === 'string' ? raw : ''
-  })
-
-  const onGlobalFilterChange: OnChangeFn<string> | undefined =
-    globalFilterEnabled
-      ? (updater) => {
-          const next =
-            typeof updater === 'function'
-              ? updater(globalFilter ?? '')
-              : updater
-          const value = trimGlobal ? next.trim() : next
-          setGlobalFilter(value)
-          navigate({
-            search: (prev) => ({
-              ...(prev as SearchRecord),
-              [pageKey]: undefined,
-              [globalFilterKey]: value ? value : undefined,
-            }),
-          })
-        }
-      : undefined
-
-  const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {
-    const next =
-      typeof updater === 'function' ? updater(columnFilters) : updater
-    setColumnFilters(next)
-
-    const patch: Record<string, unknown> = {}
-
-    for (const cfg of columnFiltersCfg) {
-      const found = next.find((f) => f.id === cfg.columnId)
-      const serialize = cfg.serialize ?? ((v: unknown) => v)
-      if (cfg.type === 'string') {
-        const value =
-          typeof found?.value === 'string' ? (found.value as string) : ''
-        patch[cfg.searchKey] =
-          value.trim() !== '' ? serialize(value) : undefined
-      } else if (cfg.type === 'date') {
-        const rawValue = found?.value
-        const value =
-          typeof rawValue === 'object'
-            ? (rawValue as Date).toDateString()
-            : undefined
-
-        patch[cfg.searchKey] = value
-      } else {
-        const value = Array.isArray(found?.value)
-          ? (found!.value as unknown[])
-          : []
-        patch[cfg.searchKey] = value.length > 0 ? serialize(value) : undefined
-      }
-    }
-    navigate({
-      search: (prev) => ({
-        ...(prev as SearchRecord),
-        [pageKey]: undefined,
-        ...patch,
-      }),
-    })
-  }
-
   const ensurePageInRange = (
     pageCount: number,
     opts: { resetTo?: 'first' | 'last' } = { resetTo: 'first' }
@@ -227,10 +196,7 @@ export function useTableUrlState(
   }
 
   return {
-    globalFilter: globalFilterEnabled ? (globalFilter ?? '') : undefined,
-    onGlobalFilterChange,
-    columnFilters,
-    onColumnFiltersChange,
+    onFiltersChange,
     pagination,
     onPaginationChange,
     ensurePageInRange,

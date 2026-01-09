@@ -54,10 +54,13 @@ export const taskFilterSchema = z.object({
   assignee: z.string().optional(),
   label: z.string().optional(),
   search: z.string().optional(),
-  page: z.number().min(1).optional(),
-  perPage: z.number().min(1).max(100).optional(),
+  currentPage: z.number().min(1),
+  perPage: z.number().min(1).max(50),
   sort: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  departments: z.array(z.string()).optional(),
 })
 
 export const formSchema = z.object({

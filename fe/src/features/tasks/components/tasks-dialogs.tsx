@@ -1,5 +1,5 @@
 import { useTasksStore } from '../data/tasks-store'
-import { useTaskQuery } from '../hooks/useTaskQuery'
+import { useTaskQuery } from '../hooks/use-task-query'
 import { TasksImportDialog } from './tasks-import-dialog'
 import { TasksMutateDrawer } from './tasks-mutate-drawer'
 

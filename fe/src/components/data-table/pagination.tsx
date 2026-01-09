@@ -4,7 +4,6 @@ import {
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
 } from '@radix-ui/react-icons'
-import { type Table } from '@tanstack/react-table'
 import { cn, getPageNumbers } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,17 +14,29 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type DataTablePaginationProps<TData> = {
-  table: Table<TData>
-  className?: string
+type PaginationFilter = {
+  currentPage: number
+  perPage: number
+  totalPages: number
 }
 
-export function DataTablePagination<TData>({
-  table,
+type DataTablePaginationProps = {
+  className?: string
+  setFilters: (patchFilter: Partial<PaginationFilter>) => void
+  totalPages: number
+  currentPage: number
+  perPage: number
+}
+
+export function DataTablePagination({
   className,
-}: DataTablePaginationProps<TData>) {
-  const currentPage = table.getState().pagination.pageIndex + 1
-  const totalPages = table.getPageCount()
+  totalPages,
+  currentPage,
+  perPage,
+  setFilters,
+}: DataTablePaginationProps) {
+  const canNextPage = currentPage < totalPages
+  const canPrevPage = currentPage > 1
   const pageNumbers = getPageNumbers(currentPage, totalPages)
 
   return (
@@ -43,16 +54,16 @@ export function DataTablePagination<TData>({
         </div>
         <div className='flex items-center gap-2 @max-2xl/content:flex-row-reverse'>
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={`${perPage}`}
             onValueChange={(value) => {
-              table.setPageSize(Number(value))
+              setFilters({ perPage: +value })
             }}
           >
             <SelectTrigger className='h-8 w-[70px]'>
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={perPage} />
             </SelectTrigger>
             <SelectContent side='top'>
-              {[10, 20, 30, 40, 50].map((pageSize) => (
+              {[12, 24, 36, 48].map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
@@ -71,8 +82,8 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0 @max-md/content:hidden'
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => setFilters({ currentPage: 1 })}
+            disabled={!canPrevPage}
           >
             <span className='sr-only'>Go to first page</span>
             <DoubleArrowLeftIcon className='h-4 w-4' />
@@ -80,8 +91,10 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0'
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => {
+              if (canPrevPage) setFilters({ currentPage: currentPage - 1 })
+            }}
+            disabled={!canPrevPage}
           >
             <span className='sr-only'>Go to previous page</span>
             <ChevronLeftIcon className='h-4 w-4' />
@@ -96,7 +109,9 @@ export function DataTablePagination<TData>({
                 <Button
                   variant={currentPage === pageNumber ? 'default' : 'outline'}
                   className='h-8 min-w-8 px-2'
-                  onClick={() => table.setPageIndex((pageNumber as number) - 1)}
+                  onClick={() =>
+                    setFilters({ currentPage: Number(pageNumber) })
+                  }
                 >
                   <span className='sr-only'>Go to page {pageNumber}</span>
                   {pageNumber}
@@ -108,8 +123,10 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0'
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => {
+              if (canNextPage) setFilters({ currentPage: currentPage + 1 })
+            }}
+            disabled={!canNextPage}
           >
             <span className='sr-only'>Go to next page</span>
             <ChevronRightIcon className='h-4 w-4' />
@@ -117,8 +134,8 @@ export function DataTablePagination<TData>({
           <Button
             variant='outline'
             className='size-8 p-0 @max-md/content:hidden'
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
+            onClick={() => setFilters({ currentPage: totalPages })}
+            disabled={!canNextPage}
           >
             <span className='sr-only'>Go to last page</span>
             <DoubleArrowRightIcon className='h-4 w-4' />

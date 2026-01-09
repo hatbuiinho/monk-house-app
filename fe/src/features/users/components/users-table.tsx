@@ -21,11 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
 import { useUserQuery } from '../hooks/useUserQuery'
 // import { type User } from '../data/schema'
-import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
@@ -47,8 +44,8 @@ export function UsersTable({ search, navigate }: DataTableProps) {
 
   // Synced with URL states (keys/defaults mirror users route search schema)
   const {
-    columnFilters,
-    onColumnFiltersChange,
+    // columnFilters,
+    // onColumnFiltersChange,
     pagination,
     onPaginationChange,
     ensurePageInRange,
@@ -56,13 +53,13 @@ export function UsersTable({ search, navigate }: DataTableProps) {
     search,
     navigate,
     pagination: { defaultPage: 1, defaultPageSize: 10 },
-    globalFilter: { enabled: false },
-    columnFilters: [
-      // username per-column text filter
-      { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'role', searchKey: 'role', type: 'array' },
-    ],
+    // globalFilter: { enabled: false },
+    // columnFilters: [
+    //   // username per-column text filter
+    //   { columnId: 'username', searchKey: 'username', type: 'string' },
+    //   { columnId: 'status', searchKey: 'status', type: 'array' },
+    //   { columnId: 'role', searchKey: 'role', type: 'array' },
+    // ],
   })
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -73,12 +70,12 @@ export function UsersTable({ search, navigate }: DataTableProps) {
       sorting,
       pagination,
       rowSelection,
-      columnFilters,
+      // columnFilters,
       columnVisibility,
     },
     enableRowSelection: true,
     onPaginationChange,
-    onColumnFiltersChange,
+    // onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
@@ -101,36 +98,6 @@ export function UsersTable({ search, navigate }: DataTableProps) {
         'flex flex-1 flex-col gap-4'
       )}
     >
-      <DataTableToolbar
-        navigate={navigate}
-        table={table}
-        searchPlaceholder='Filter users...'
-        searchKey='username'
-        filters={[
-          {
-            columnId: 'status',
-            title: 'Status',
-            options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-              { label: 'Invited', value: 'invited' },
-              { label: 'Suspended', value: 'suspended' },
-            ],
-          },
-          {
-            columnId: 'role',
-            title: 'Role',
-            options: roles.map((role) => ({ ...role })),
-          },
-        ]}
-        // dateFilters={[
-        //   {
-        //     columnId: 'created',
-        //     title: 'Created Date',
-        //     defaultDate: new Date(),
-        //   },
-        // ]}
-      />
       <div className='overflow-hidden rounded-md border'>
         <Table>
           <TableHeader>
@@ -197,8 +164,8 @@ export function UsersTable({ search, navigate }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
-      <DataTableBulkActions table={table} />
+      {/* <DataTablePagination className='mt-auto' /> */}
+      {/* <DataTableBulkActions table={table} /> */}
     </div>
   )
 }

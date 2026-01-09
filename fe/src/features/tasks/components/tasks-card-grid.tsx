@@ -1,196 +1,103 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
-import {
-  type SortingState,
-  type VisibilityState,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
+import { Leaf } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTableUrlState } from '@/hooks/use-table-url-state'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { statuses } from '../data/data'
 import { type Task } from '../data/schema'
+import { useTasksStore } from '../data/tasks-store'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { TaskCard } from './task-card'
 import { TaskDetailDialog } from './task-detail-dialog'
-import { tasksColumns as columns } from './tasks-columns'
+import TaskStatusButtonGroup from './task-status-button-group'
 
 const route = getRouteApi('/_authenticated/')
 
 type DataTableProps = {
-  data: Task[]
+  data?: Task[]
+  className?: string
 }
 
-export function TasksCardGrid({ data }: DataTableProps) {
+export function TasksCardGrid({ className }: DataTableProps) {
   // Local UI-only states
-  const [selectMode, setSelectMode] = useState(false)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
-  const [rowSelection, setRowSelection] = useState({})
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-
-  // Local state management for table (uncomment to use local-only state, not synced with URL)
-  // const [globalFilter, onGlobalFilterChange] = useState('')
-  // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
-  // const [pagination, onPaginationChange] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
-
-  // Synced with URL states (updated to match route search schema defaults)
   const {
-    globalFilter,
-    onGlobalFilterChange,
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search: route.useSearch(),
-    navigate: route.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
-    globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [
-      { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'priority', searchKey: 'priority', type: 'array' },
-      { columnId: 'created', searchKey: 'created', type: 'date' },
-    ],
-  })
+    tasks,
+    isLoading,
+    error,
+    currentTask,
+    setCurrentTask,
+    setFilters,
+    totalPages,
+    filters,
+  } = useTasksStore()
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-      globalFilter,
-      pagination,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    globalFilterFn: (row, _columnId, filterValue) => {
-      const id = String(row.getValue('id')).toLowerCase()
-      const title = String(row.getValue('title')).toLowerCase()
-      const searchValue = String(filterValue).toLowerCase()
-
-      return id.includes(searchValue) || title.includes(searchValue)
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    onPaginationChange,
-    onGlobalFilterChange,
-    onColumnFiltersChange,
-  })
-
-  const pageCount = table.getPageCount()
-  useEffect(() => {
-    ensurePageInRange(pageCount)
-  }, [pageCount, ensurePageInRange])
+  const [selectMode, setSelectMode] = useState(false)
+  // const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  // const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false)
 
   return (
-    <div
-      className={cn(
-        'max-sm:has-[div[role="toolbar"]]:mb-16', // Add margin bottom to the table on mobile when the toolbar is visible
-        'flex flex-1 flex-col gap-4'
-      )}
-    >
-      {/* <div className='w-full'> */}
-      <DataTableToolbar
-        className='w-full'
-        table={table}
-        searchPlaceholder='Filter by title or ID...'
-        selectMode={selectMode}
-        onSelectModeChange={setSelectMode}
-        navigate={route.useNavigate()}
-        filters={[
-          {
-            columnId: 'status',
-            title: 'Status',
-            options: statuses,
-          },
-          // {
-          //   columnId: 'priority',
-          //   title: 'Priority',
-          //   options: priorities,
-          // },
-        ]}
-        dateFilters={[
-          {
-            columnId: 'created',
-            title: 'Created Date',
-            // defaultDate: new Date(),
-          },
-        ]}
-      />
-      {/* </div> */}
-      <div>
-        {/* Card Grid Layout */}
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TaskCard
-                key={row.id}
-                row={row}
-                selectMode={selectMode}
-                onTaskClick={(task) => {
-                  setSelectedTask(task)
-                  setIsDetailSheetOpen(true)
-                }}
-              />
-            ))
-          ) : (
-            <div className='text-muted-foreground col-span-full flex h-32 items-center justify-center'>
-              No results.
-            </div>
+    <>
+      <div
+        className={cn(
+          'max-sm:has-[div[role="toolbar"]]:mb-16', // Add margin bottom to the table on mobile when the toolbar is visible
+          'flex flex-1 flex-col gap-4',
+          className
+        )}
+      >
+        {/* <div className='w-full'> */}
+        <DataTableToolbar
+          className='w-full'
+          searchPlaceholder='Tìm kiếm...'
+          selectMode={selectMode}
+          onSelectModeChange={setSelectMode}
+          navigate={route.useNavigate()}
+          search={route.useSearch()}
+        />
+        <div
+          className={cn('flex h-64 items-center justify-center', {
+            hidden: !isLoading && !error,
+          })}
+        >
+          <div className='text-muted-foreground'>Loading...</div>
+          {error && (
+            <div className='text-destructive'>Error: {error.message}</div>
           )}
         </div>
-      </div>
+        {/* </div> */}
+        <div className={cn({ 'opacity-0': isLoading || error })}>
+          {/* Card Grid Layout */}
+          <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+            {tasks.length ? (
+              tasks.map((row) => (
+                <TaskCard
+                  key={row.id}
+                  row={row}
+                  selectMode={selectMode}
+                  onTaskClick={(task) => {
+                    setCurrentTask(task)
+                  }}
+                />
+              ))
+            ) : (
+              <div className='text-muted-foreground col-span-full flex h-60 flex-col items-center justify-center'>
+                <Leaf size={100} />
+                <div>Trống</div>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <DataTablePagination table={table} className='mt-auto' />
-      <div className='p-3'></div>
-      <Tabs
-        onValueChange={(value) => {
-          const column = table.getColumn('status')
-          column?.setFilterValue(value)
-        }}
-        defaultValue='todo'
-        className='fixed right-0 bottom-0 left-0 w-full md:hidden'
-      >
-        <TabsList className='h-full w-full'>
-          {statuses.map((status) => (
-            <TabsTrigger key={status.value} value={status.value}>
-              {status.icon && (
-                <status.icon className={cn('size-4', status.className)} />
-              )}
-              {status.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      <DataTableBulkActions table={table} />
-      {selectedTask && (
-        <TaskDetailDialog
-          task={selectedTask}
-          taskId={selectedTask.id}
-          open={isDetailSheetOpen}
-          onOpenChange={setIsDetailSheetOpen}
+        <DataTablePagination
+          totalPages={totalPages}
+          currentPage={filters.currentPage}
+          perPage={filters.perPage}
+          setFilters={setFilters}
+          className='mt-auto'
         />
-      )}
-    </div>
+        <div className='p-3'></div>
+        <TaskStatusButtonGroup />
+        <DataTableBulkActions />
+        {currentTask && <TaskDetailDialog taskId={currentTask?.id} />}
+      </div>
+    </>
   )
 }
