@@ -18,7 +18,7 @@ type DataTableRowActionsProps = {
 }
 
 export function DataTableRowActions({ task }: DataTableRowActionsProps) {
-  const { setOpen, setCurrentRow } = useTasksStore()
+  const { setOpen, setCurrentTask } = useTasksStore()
   const [openMenu, setOpenMenu] = useState(false)
 
   return (
@@ -41,7 +41,7 @@ export function DataTableRowActions({ task }: DataTableRowActionsProps) {
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation()
-            setCurrentRow(task)
+            setCurrentTask(task)
             setOpen('update')
           }}
         >
@@ -63,7 +63,7 @@ export function DataTableRowActions({ task }: DataTableRowActionsProps) {
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation()
-            setCurrentRow(task)
+            setCurrentTask(task)
             setOpen('delete')
           }}
         >

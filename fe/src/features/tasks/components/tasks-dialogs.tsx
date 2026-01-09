@@ -4,13 +4,13 @@ import { TasksImportDialog } from './tasks-import-dialog'
 import { TasksMutateDrawer } from './tasks-mutate-drawer'
 
 export function TasksDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow } = useTasksStore()
+  const { open, setOpen, currentTask, setCurrentTask } = useTasksStore()
   const { deleteTask } = useTaskQuery()
 
   const handleDelete = async () => {
-    if (currentRow) {
+    if (currentTask) {
       try {
-        await deleteTask(currentRow.id)
+        await deleteTask(currentTask.id)
       } catch (error) {
         // Error handling is done in the provider
         // eslint-disable-next-line no-console
@@ -33,18 +33,18 @@ export function TasksDialogs() {
         onOpenChange={() => setOpen('import')}
       />
 
-      {currentRow && (
+      {currentTask && (
         <>
           <TasksMutateDrawer
-            key={`task-update-${currentRow.id}`}
+            key={`task-update-${currentTask.id}`}
             open={open === 'update'}
             onOpenChange={() => {
               setOpen('update')
               setTimeout(() => {
-                setCurrentRow(null)
+                setCurrentTask(null)
               }, 500)
             }}
-            currentRow={currentRow}
+            currentRow={currentTask}
           />
 
           <div
@@ -55,11 +55,11 @@ export function TasksDialogs() {
             <div className='bg-background fixed top-[50%] left-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border p-6 shadow-lg duration-200'>
               <div className='flex flex-col space-y-2 text-center sm:text-left'>
                 <h2 className='text-lg font-semibold'>
-                  Delete this task: {currentRow.id}?
+                  Delete this task: {currentTask.id}?
                 </h2>
                 <p className='text-muted-foreground text-sm'>
                   You are about to delete a task with the ID{' '}
-                  <strong>{currentRow.id}</strong>. <br />
+                  <strong>{currentTask.id}</strong>. <br />
                   This action cannot be undone.
                 </p>
               </div>
@@ -69,7 +69,7 @@ export function TasksDialogs() {
                   onClick={() => {
                     setOpen('delete')
                     setTimeout(() => {
-                      setCurrentRow(null)
+                      setCurrentTask(null)
                     }, 500)
                   }}
                 >

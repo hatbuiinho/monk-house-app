@@ -83,7 +83,7 @@ export class TasksAPI {
     const {
       startDate,
       endDate,
-      page = 1,
+      currentPage = 1,
       perPage = 20,
       sort = '-created',
       departments,
@@ -128,7 +128,7 @@ export class TasksAPI {
       query = filters.join(' && ')
     }
 
-    const result = await this.collection.getList(page, perPage, {
+    const result = await this.collection.getList(currentPage, perPage, {
       filter: query,
       sort: sort,
     })
