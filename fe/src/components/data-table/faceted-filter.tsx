@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons'
+import { CheckIcon } from '@radix-ui/react-icons'
+import { Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,7 @@ export function DataTableFacetedFilter({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant='outline' size='sm' className='border-dashed'>
-          <PlusCircledIcon className='size-4' />
+          <Filter className='size-4' />
           {title}
           {uniqueSelectedValues?.size > 0 && (
             <>

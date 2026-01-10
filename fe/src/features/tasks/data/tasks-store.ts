@@ -1,8 +1,8 @@
-import { addDays } from 'date-fns'
+import { endOfWeek, startOfWeek } from 'date-fns'
 import { create } from 'zustand'
 import type { Task, TaskFilter } from './schema'
 
-type TasksDialogType = 'create' | 'update' | 'delete' | 'import'
+type TasksDialogType = 'create' | 'update' | 'delete' | 'import' | 'detail'
 
 type TasksStore = {
   // Dialog state
@@ -76,6 +76,14 @@ type TasksStore = {
   setRefetchStats: (refetchStats: () => void) => void
 }
 
+const getCurrentWeekRange = () => {
+  const today = new Date()
+  return {
+    startDate: startOfWeek(today, { weekStartsOn: 1 }),
+    endDate: endOfWeek(today, { weekStartsOn: 1 }),
+  }
+}
+
 export const useTasksStore = create<TasksStore>((set, get) => ({
   // Dialog state
   open: null,
@@ -107,8 +115,7 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
     currentPage: 1,
     perPage: 12,
     sort: '-created',
-    startDate: new Date(),
-    endDate: addDays(new Date(), 1),
+    ...getCurrentWeekRange(),
   },
   setFilters: (filters) => {
     const { filters: oldFilters } = get()

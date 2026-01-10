@@ -1,5 +1,6 @@
 import { useTasksStore } from '../data/tasks-store'
 import { useTaskQuery } from '../hooks/use-task-query'
+import { TaskDetailDialog } from './task-detail-dialog'
 import { TasksImportDialog } from './tasks-import-dialog'
 import { TasksMutateDrawer } from './tasks-mutate-drawer'
 
@@ -21,28 +22,41 @@ export function TasksDialogs() {
 
   return (
     <>
-      <TasksMutateDrawer
-        key='task-create'
-        open={open === 'create'}
-        onOpenChange={() => setOpen(null)}
-      />
-
       <TasksImportDialog
         key='tasks-import'
         open={open === 'import'}
-        onOpenChange={() => setOpen('import')}
+        onOpenChange={(open) => {
+          if (!open) setOpen(null)
+        }}
       />
-
       {currentTask && (
+        <TaskDetailDialog
+          key={`task-detail-${currentTask?.id}`}
+          open={open === 'detail'}
+          taskId={currentTask?.id}
+          onOpenChange={(open) => {
+            if (!open) {
+              setOpen(null)
+              setTimeout(() => {
+                setCurrentTask(null)
+              }, 500)
+            }
+          }}
+        />
+      )}
+
+      {currentTask ? (
         <>
           <TasksMutateDrawer
             key={`task-update-${currentTask.id}`}
             open={open === 'update'}
-            onOpenChange={() => {
-              setOpen('update')
-              setTimeout(() => {
-                setCurrentTask(null)
-              }, 500)
+            onOpenChange={(open) => {
+              if (!open) {
+                setOpen(null)
+                setTimeout(() => {
+                  setCurrentTask(null)
+                }, 500)
+              }
             }}
             currentRow={currentTask}
           />
@@ -67,7 +81,7 @@ export function TasksDialogs() {
                 <button
                   className='ring-offset-background focus-visible:ring-ring border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 items-center justify-center rounded-md border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'
                   onClick={() => {
-                    setOpen('delete')
+                    setOpen(null)
                     setTimeout(() => {
                       setCurrentTask(null)
                     }, 500)
@@ -85,6 +99,14 @@ export function TasksDialogs() {
             </div>
           </div>
         </>
+      ) : (
+        <TasksMutateDrawer
+          key='task-create'
+          open={open === 'create'}
+          onOpenChange={(open) => {
+            if (!open) setOpen(null)
+          }}
+        />
       )}
     </>
   )

@@ -89,20 +89,20 @@ export function TaskToolbar({
   }, [tasksFilters])
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='flex flex-1 flex-col items-start gap-2 overflow-y-scroll p-1 sm:flex-row sm:items-center sm:space-x-2'>
-        <div className='w-full'>
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(event) => {
-              const { value } = event.target
-              setSearchValue(value)
-            }}
-            className={cn('h-8', className)}
-          />
-        </div>
-        <div className='flex gap-x-2'>
+    <div className='flex flex-col items-center justify-between sm:flex-row'>
+      <div className='w-full'>
+        <Input
+          placeholder={searchPlaceholder}
+          value={searchValue}
+          onChange={(event) => {
+            const { value } = event.target
+            setSearchValue(value)
+          }}
+          className={cn('h-8', className)}
+        />
+      </div>
+      <div className='no-scrollbar w-full overflow-x-auto p-1 sm:flex sm:flex-1 sm:items-center sm:space-x-2 sm:overflow-visible'>
+        <div className='flex w-max gap-x-2 sm:w-auto'>
           {onSelectModeChange && (
             <Button
               variant={selectMode ? 'outline' : 'outline'}

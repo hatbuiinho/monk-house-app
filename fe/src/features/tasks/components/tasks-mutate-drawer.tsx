@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -6,7 +7,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -15,7 +15,6 @@ import { Form } from '@/components/ui/form'
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
@@ -60,6 +59,23 @@ export function TasksMutateDrawer({
     },
   })
 
+  useEffect(() => {
+    if (currentRow) {
+      form.reset(currentRow)
+      return
+    }
+
+    form.reset({
+      title: '',
+      description: '',
+      status: 'todo',
+      label: '',
+      assignees: [],
+      due_date: '',
+      departments: [],
+    })
+  }, [currentRow, form])
+
   const onSubmit = async (data: TaskForm) => {
     try {
       const dueDate = data.due_date
@@ -76,6 +92,7 @@ export function TasksMutateDrawer({
           // priority: data.priority as TaskPriority,
           assignees: data.assignees as string[],
           due_date: dueDate,
+          departments: data.departments as string[],
         }
         await updateTask(currentRow.id, updateData)
       } else {
@@ -110,22 +127,22 @@ export function TasksMutateDrawer({
     }
   }
 
-  const title = `${isUpdate ? 'Update' : 'Create'} Task`
-  const description = isUpdate
-    ? 'Update the task by providing necessary info.'
-    : 'Add a new task by providing necessary info.'
-  const descriptionSuffix = "Click save when you're done."
+  const title = `${isUpdate ? 'Cập nhật' : 'Tạo mới'} công việc`
+  // const description = isUpdate
+  //   ? 'Update the task by providing necessary info.'
+  //   : 'Add a new task by providing necessary info.'
+  // const descriptionSuffix = "Click save when you're done."
 
   if (isMobile) {
     // Mobile: Use right sheet
     return (
-      <Sheet modal={false} open={open} onOpenChange={handleOpenChange}>
+      <Sheet modal={true} open={open} onOpenChange={handleOpenChange}>
         <SheetContent side='right' className='flex w-full flex-col md:w-3/4'>
           <SheetHeader className='text-start'>
             <SheetTitle>{title}</SheetTitle>
-            <SheetDescription>
+            {/* <SheetDescription>
               {description} {descriptionSuffix}
-            </SheetDescription>
+            </SheetDescription> */}
           </SheetHeader>
           <Form {...form}>
             <form
@@ -140,10 +157,10 @@ export function TasksMutateDrawer({
             <Button
               variant='outline'
               disabled={isLoading}
-              onClick={() => handleOpenChange(false)}
+              onClick={() => onOpenChange(false)}
               className='w-full'
             >
-              Close
+              Đóng
             </Button>
             <Button
               form='tasks-form'
@@ -151,7 +168,7 @@ export function TasksMutateDrawer({
               disabled={isLoading}
               className='w-full'
             >
-              {isLoading ? 'Saving...' : 'Save changes'}
+              {isLoading ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -161,13 +178,13 @@ export function TasksMutateDrawer({
 
   // Desktop: Use dialog
   return (
-    <Dialog modal={false} open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='flex flex-col sm:max-w-[500px]'>
         <DialogHeader className='text-start'>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
+          {/* <DialogDescription>
             {description} {descriptionSuffix}
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
         <Form {...form}>
           <form
@@ -181,11 +198,11 @@ export function TasksMutateDrawer({
         <DialogFooter className='gap-2'>
           <DialogClose asChild>
             <Button variant='outline' disabled={isLoading}>
-              Close
+              Đóng
             </Button>
           </DialogClose>
           <Button form='tasks-form' type='submit' disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save changes'}
+            {isLoading ? 'Đang lưu...' : 'Lưu'}
           </Button>
         </DialogFooter>
       </DialogContent>

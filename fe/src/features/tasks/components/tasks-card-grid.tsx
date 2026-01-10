@@ -7,7 +7,6 @@ import { type Task } from '../data/schema'
 import { useTasksStore } from '../data/tasks-store'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { TaskCard } from './task-card'
-import { TaskDetailDialog } from './task-detail-dialog'
 import TaskStatusButtonGroup from './task-status-button-group'
 
 const route = getRouteApi('/_authenticated/')
@@ -23,11 +22,11 @@ export function TasksCardGrid({ className }: DataTableProps) {
     tasks,
     isLoading,
     error,
-    currentTask,
     setCurrentTask,
     setFilters,
     totalPages,
     filters,
+    setOpen,
   } = useTasksStore()
 
   const [selectMode, setSelectMode] = useState(false)
@@ -70,6 +69,7 @@ export function TasksCardGrid({ className }: DataTableProps) {
                   selectMode={selectMode}
                   onTaskClick={(task) => {
                     setCurrentTask(task)
+                    setOpen('detail')
                   }}
                 />
               ))
@@ -82,17 +82,19 @@ export function TasksCardGrid({ className }: DataTableProps) {
           </div>
         </div>
 
-        <DataTablePagination
-          totalPages={totalPages}
-          currentPage={filters.currentPage}
-          perPage={filters.perPage}
-          setFilters={setFilters}
-          className='mt-auto'
-        />
+        {!!totalPages && (
+          <DataTablePagination
+            totalPages={totalPages}
+            currentPage={filters.currentPage}
+            perPage={filters.perPage}
+            setFilters={setFilters}
+            className='mt-auto'
+          />
+        )}
         <div className='p-3'></div>
         <TaskStatusButtonGroup />
         <DataTableBulkActions />
-        {currentTask && <TaskDetailDialog taskId={currentTask?.id} />}
+        {/* {currentTask && <TaskDetailDialog taskId={currentTask?.id} />} */}
       </div>
     </>
   )

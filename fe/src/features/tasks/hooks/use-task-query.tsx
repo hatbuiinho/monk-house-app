@@ -29,13 +29,12 @@ export const useTaskQuery = () => {
     queryKey: ['tasks', filters],
     queryFn: () => tasksAPI.getTasks(filters),
     // staleTime: 0 * 60 * 1000, // 5 minutes
-    gcTime: 0 * 60 * 1000, // 10 minutes
+    gcTime: 2 * 60 * 1000, // 10 minutes
   })
 
   useEffect(() => {
     setTasks(data?.items ?? [])
     setTotalItems(data?.totalItems ?? 0)
-    // setPerPage(data?.perPage ?? 10)
     setTotalPages(data?.totalPages ?? 1)
     setIsLoading(isLoading)
     setError(isError ? new Error('Failed to fetch tasks') : null)
@@ -73,7 +72,7 @@ export const useTaskQuery = () => {
       }>
     }) => tasksAPI.updateTask(id, task),
     onSuccess: (data) => {
-      // setOpen(null)
+      setOpen(null)
       setCurrentTask(data)
     },
     onError: (error: TaskError) => {
@@ -119,10 +118,14 @@ export const useTaskQuery = () => {
           }
           break
         case 'update':
-          setTasks(tasks.map((task) => (task.id === _task.id ? _task : task)))
+          setTimeout(() => {
+            setTasks(tasks.map((task) => (task.id === _task.id ? _task : task)))
+          }, 200)
           break
         case 'delete':
-          setTasks(tasks.filter((task) => task.id !== _task.id))
+          setTimeout(() => {
+            setTasks(tasks.filter((task) => task.id !== _task.id))
+          }, 200)
           break
       }
       // toast.info(`${actionMessages[action]}: ${task.title}`)

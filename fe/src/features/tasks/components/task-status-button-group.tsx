@@ -11,7 +11,7 @@ const TaskStatusButtonGroup = () => {
           <button
             className={cn(
               'flex grow items-center justify-center gap-2 rounded-xl px-3 py-2 transition-all duration-500',
-              { 'bg-secondary': filters.status === status.value }
+              { 'bg-white': filters.status === status.value }
             )}
             key={status.value}
             value={status.value}

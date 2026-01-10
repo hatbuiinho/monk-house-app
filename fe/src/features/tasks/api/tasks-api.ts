@@ -106,7 +106,7 @@ export class TasksAPI {
       // priority: (data.priority as TaskPriority) || 'medium',
       label: data.label || '',
       assignees: data.expand?.assignees || data.assignees,
-      departments: data.expand?.departments || data.assignees,
+      departments: data.expand?.departments || data.departments,
       due_date: data.due_date || '',
       created: data.created || record.created || '',
       updated: data.updated || record.updated || '',

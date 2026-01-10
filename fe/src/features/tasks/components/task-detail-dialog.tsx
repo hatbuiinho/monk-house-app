@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
 import {
   Dialog,
   DialogContent,
@@ -15,10 +14,11 @@ import {
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
+import { useDepartmentsStore } from '@/features/departments/data/departments-store'
 import { FeedbackConversation } from '@/features/feedbacks/components/feedback-conversation'
 import { useUserQuery } from '@/features/users/hooks/useUserQuery'
 import { tasksAPI } from '../api/tasks-api'
-import { statuses } from '../data/data'
+import { getDepartmentBadges } from '../data/data'
 import {
   type Task,
   type TaskForm,
@@ -27,17 +27,18 @@ import {
 } from '../data/schema'
 import { useTasksStore } from '../data/tasks-store'
 import { useTaskQuery } from '../hooks/use-task-query'
+import TaskStatusSwitch from './task-status-switch'
 
 type TaskDetailDialogProps = {
   task?: Task
   taskId?: string
-  // open: boolean
+  open: boolean
   onOpenChange?: (open: boolean) => void
 }
 
 export function TaskDetailDialog({
   taskId,
-  // open,
+  open,
   onOpenChange,
 }: TaskDetailDialogProps) {
   const { users, isLoading: userLoading } = useUserQuery()
@@ -79,6 +80,12 @@ export function TaskDetailDialog({
   }, [currentTask])
 
   const memoizedUsers = useMemo(() => users, [users])
+
+  const { departments } = useDepartmentsStore()
+  const departmentBadges = useMemo(
+    () => getDepartmentBadges(nonNullTask.departments, departments),
+    [nonNullTask]
+  )
 
   const onSubmit = async (data: Partial<TaskForm>) => {
     try {
@@ -123,9 +130,9 @@ export function TaskDetailDialog({
   return (
     <Dialog
       modal={false}
-      open={!!currentTask}
+      open={open}
       onOpenChange={(open) => {
-        setCurrentTask(null)
+        // setCurrentTask(null)
         onOpenChange?.(open)
       }}
     >
@@ -140,7 +147,7 @@ export function TaskDetailDialog({
               <DialogHeader className='sticky top-0 z-50 bg-white pt-3'>
                 <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
                   <div className='text-muted-foreground text-sm'>
-                    Task:{' '}
+                    Công việc:{' '}
                     <span className='text-foreground font-mono'>
                       #{nonNullTask.id}
                     </span>
@@ -148,18 +155,19 @@ export function TaskDetailDialog({
                   {/* add department name with badge component */}
                   <div className='text-muted-foreground py-2 text-[12px]'>
                     <span className='text-muted-foreground text-sx font-mono'>
-                      {nonNullTask.departments?.map((department) => {
-                        return typeof department === 'string' ? (
-                          ''
-                        ) : (
-                          <Badge
-                            variant='default'
-                            className='flex items-center gap-1'
-                          >
-                            {department.name}
-                          </Badge>
-                        )
-                      })}
+                      {departmentBadges.length > 0 && (
+                        <div className='flex flex-wrap gap-1.5'>
+                          {departmentBadges.map((dept) => (
+                            <Badge
+                              key={dept.id}
+                              variant='outline'
+                              className={cn('border', dept.className)}
+                            >
+                              {dept.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </span>
                   </div>
                 </DialogTitle>
@@ -186,26 +194,16 @@ export function TaskDetailDialog({
                         </div>
                       </div>
 
+                      {/* Task Status */}
                       <div className='space-between flex flex-1 flex-col items-baseline justify-between space-y-6 overflow-y-auto p-2'>
                         <div className='flex w-full items-center gap-2'>
-                          <ButtonGroup className=''>
-                            {statuses.map((status) => (
-                              <Button
-                                key={status.value}
-                                variant={
-                                  status.value === nonNullTask.status
-                                    ? 'default'
-                                    : 'outline'
-                                }
-                                onClick={() => {
-                                  onSubmit({ status: status.value })
-                                }}
-                              >
-                                {<status.icon className={status.className} />}{' '}
-                                {status.label}
-                              </Button>
-                            ))}
-                          </ButtonGroup>
+                          <TaskStatusSwitch
+                            key={`task-status-switch-detail`}
+                            onSelect={(status) => {
+                              onSubmit({ status })
+                            }}
+                            value={nonNullTask.status}
+                          />
                           {_isLoading && <Spinner className='size-5' />}
                         </div>
 
@@ -293,7 +291,7 @@ export function TaskDetailDialog({
                 >
                   <Logs />
                 </div>{' '}
-                <span className='text-xs'>Details</span>
+                <span className='text-xs'>Chi tiết</span>
               </Button>
               <Button
                 onClick={() => {

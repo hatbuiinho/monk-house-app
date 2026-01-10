@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { labels, statuses } from '../data/data'
+import { useDepartmentsStore } from '@/features/departments/data/departments-store'
+import { getDepartmentBadges, labels, statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { useTasksStore } from '../data/tasks-store'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -26,6 +27,8 @@ export function TaskCard({
   const [selected, setSelected] = useState(false)
 
   const { toggleTaskSelection, selectedTasks } = useTasksStore()
+  const { departments } = useDepartmentsStore()
+  const departmentBadges = getDepartmentBadges(task.departments, departments)
 
   useEffect(() => {
     setSelected(selectedTasks.includes(task.id))
@@ -73,6 +76,19 @@ export function TaskCard({
           <div className='flex items-center space-x-2'>
             {label && <Badge variant='outline'>{label.label}</Badge>}
           </div>
+          {departmentBadges.length > 0 && (
+            <div className='flex flex-wrap gap-1.5'>
+              {departmentBadges.map((dept) => (
+                <Badge
+                  key={dept.id}
+                  variant='outline'
+                  className={cn('border', dept.className)}
+                >
+                  {dept.name}
+                </Badge>
+              ))}
+            </div>
+          )}
           <CardTitle className='line-clamp-2 text-base leading-tight'>
             {task.title}
           </CardTitle>
