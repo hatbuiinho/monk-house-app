@@ -81,9 +81,9 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
   }
 
   return (
-    <div className='flex h-full flex-1 flex-col gap-2 rounded-md pt-0'>
-      <div className='flex size-full flex-1'>
-        <div className='relative -me-4 flex flex-1 flex-col overflow-y-hidden'>
+    <div className='no-scrollbar absolute top-0 right-0 bottom-14 left-0 gap-2 overflow-x-hidden overflow-y-scroll p-3'>
+      <div className='flex flex-1'>
+        <div className='relative -me-4 flex flex-1 flex-col'>
           <div
             ref={chatContainerRef}
             className='flex w-full grow flex-col-reverse justify-start gap-4 overflow-y-scroll pe-4'

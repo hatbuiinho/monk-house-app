@@ -81,7 +81,6 @@ export function TasksCardGrid({ className }: DataTableProps) {
             )}
           </div>
         </div>
-
         {!!totalPages && (
           <DataTablePagination
             totalPages={totalPages}

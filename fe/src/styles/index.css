@@ -2,6 +2,9 @@
 @import 'tw-animate-css';
 @import './theme.css';
 
+@import './_variables.scss';
+@import './_keyframe-animations.scss';
+
 @custom-variant dark (&:is(.dark *));
 
 @layer base {

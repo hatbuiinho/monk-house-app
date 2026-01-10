@@ -72,7 +72,7 @@ export const useTaskQuery = () => {
       }>
     }) => tasksAPI.updateTask(id, task),
     onSuccess: (data) => {
-      setOpen(null)
+      // setOpen(null)
       setCurrentTask(data)
     },
     onError: (error: TaskError) => {
