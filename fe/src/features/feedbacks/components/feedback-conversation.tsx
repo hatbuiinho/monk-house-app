@@ -81,122 +81,121 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
   }
 
   return (
-    <div className='no-scrollbar absolute top-0 right-0 bottom-14 left-0 gap-2 overflow-x-hidden overflow-y-scroll p-3'>
-      <div className='flex flex-1'>
-        <div className='relative -me-4 flex flex-1 flex-col'>
-          <div
-            ref={chatContainerRef}
-            className='flex w-full grow flex-col-reverse justify-start gap-4 overflow-y-scroll pe-4'
-          >
-            <>
-              <div className='size-full grow overflow-y-scroll'>
-                {Object.keys(groupedFeedbacks).map((date) => (
-                  <div key={date} className='flex flex-col gap-2'>
-                    {groupedFeedbacks[date].map((feedback, index) => {
-                      const isCurrentUser =
-                        feedback.sender &&
-                        (typeof feedback.sender === 'object'
-                          ? feedback.sender.id === currentUser?.id
-                          : feedback.sender === currentUser?.id)
+    <div className='no-scrollbar size-full gap-2 overflow-x-hidden overflow-y-scroll p-3'>
+      <div className='-me-4 flex flex-1 flex-col'>
+        <div
+          ref={chatContainerRef}
+          className='flex w-full grow flex-col-reverse justify-start gap-4 overflow-y-scroll pe-4'
+        >
+          <>
+            <div className='size-full grow overflow-y-scroll'>
+              {Object.keys(groupedFeedbacks).map((date) => (
+                <div key={date} className='flex flex-col gap-2'>
+                  {groupedFeedbacks[date].map((feedback, index) => {
+                    const isCurrentUser =
+                      feedback.sender &&
+                      (typeof feedback.sender === 'object'
+                        ? feedback.sender.id === currentUser?.id
+                        : feedback.sender === currentUser?.id)
 
-                      const senderName =
-                        typeof feedback.sender === 'object'
-                          ? feedback.sender.name
-                          : 'Unknown User'
+                    const senderName =
+                      typeof feedback.sender === 'object'
+                        ? feedback.sender.name
+                        : 'Unknown User'
 
-                      const senderAvatarUrl =
-                        typeof feedback.sender === 'object'
-                          ? feedback.sender.avatar_url
-                          : ''
+                    const senderAvatarUrl =
+                      typeof feedback.sender === 'object'
+                        ? feedback.sender.avatar_url
+                        : ''
 
-                      return (
+                    return (
+                      <div
+                        key={`${feedback.id}-${index}`}
+                        className={cn(
+                          'flex items-start gap-2',
+                          isCurrentUser ? 'justify-end' : 'justify-start'
+                        )}
+                      >
+                        {!isCurrentUser && (
+                          <Avatar className='mt-1 h-8 w-8'>
+                            <AvatarImage
+                              src={senderAvatarUrl}
+                              alt={senderName}
+                            />
+                            <AvatarFallback className='rounded-full'>
+                              {senderName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                         <div
-                          key={`${feedback.id}-${index}`}
                           className={cn(
-                            'flex items-start gap-2',
-                            isCurrentUser ? 'justify-end' : 'justify-start'
+                            'chat-box max-w-72 px-3 py-2 wrap-break-word shadow-lg',
+                            isCurrentUser
+                              ? 'bg-primary/90 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px]'
+                              : 'bg-muted self-start rounded-[16px_16px_16px_0]'
                           )}
                         >
                           {!isCurrentUser && (
-                            <Avatar className='mt-1 h-8 w-8'>
-                              <AvatarImage
-                                src={senderAvatarUrl}
-                                alt={senderName}
-                              />
-                              <AvatarFallback className='rounded-full'>
-                                {senderName.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <div className='mb-1 text-sm font-medium'>
+                              {senderName}
+                            </div>
                           )}
                           <div
+                            className='whitespace-pre-wrap'
+                            dangerouslySetInnerHTML={{
+                              __html: feedback.message,
+                            }}
+                          ></div>
+                          <span
                             className={cn(
-                              'chat-box max-w-72 px-3 py-2 wrap-break-word shadow-lg',
-                              isCurrentUser
-                                ? 'bg-primary/90 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px]'
-                                : 'bg-muted self-start rounded-[16px_16px_16px_0]'
+                              'text-foreground/75 mt-1 block text-xs font-light italic',
+                              isCurrentUser &&
+                                'text-primary-foreground/85 text-end'
                             )}
                           >
-                            {!isCurrentUser && (
-                              <div className='mb-1 text-sm font-medium'>
-                                {senderName}
-                              </div>
-                            )}
-                            <div
-                              className='whitespace-pre-wrap'
-                              dangerouslySetInnerHTML={{
-                                __html: feedback.message,
-                              }}
-                            ></div>
-                            <span
-                              className={cn(
-                                'text-foreground/75 mt-1 block text-xs font-light italic',
-                                isCurrentUser &&
-                                  'text-primary-foreground/85 text-end'
-                              )}
-                            >
-                              {format(new Date(feedback.timestamp), 'h:mm a')}
-                            </span>
-                          </div>
-                          {isCurrentUser && (
-                            <Avatar className='mt-1 h-8 w-8'>
-                              <AvatarImage
-                                src={senderAvatarUrl}
-                                alt={senderName}
-                              />
-                              <AvatarFallback className='rounded-full'>
-                                {senderName.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
+                            {format(new Date(feedback.timestamp), 'h:mm a')}
+                          </span>
                         </div>
-                      )
-                    })}
-                    <div className='text-muted-foreground text-center text-xs'>
-                      {date}
-                    </div>
+                        {isCurrentUser && (
+                          <Avatar className='mt-1 h-8 w-8'>
+                            <AvatarImage
+                              src={senderAvatarUrl}
+                              alt={senderName}
+                            />
+                            <AvatarFallback className='rounded-full'>
+                              {senderName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    )
+                  })}
+                  <div className='text-muted-foreground text-center text-xs'>
+                    {date}
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </>
-            <div
-              className={cn('flex items-center justify-center py-4', {
-                hidden: !isLoading,
-              })}
-            >
-              <div className='border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent'></div>
+                </div>
+              ))}
+              <div className='mb-16'></div>
+              <div ref={messagesEndRef} />
             </div>
+          </>
+          <div
+            className={cn('flex items-center justify-center py-4', {
+              hidden: !isLoading,
+            })}
+          >
+            <div className='border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent'></div>
+          </div>
 
-            <div className={cn('text-center text-red-500', { hidden: !error })}>
-              {error}
-            </div>
+          <div className={cn('text-center text-red-500', { hidden: !error })}>
+            {error}
           </div>
         </div>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className='fixed right-20 bottom-2 left-2 flex flex-none items-center gap-2'
+        className='absolute right-0 bottom-0 left-0 flex flex-none items-center gap-2 bg-white p-2'
       >
         <div className='border-input bg-card focus-within:ring-ring flex flex-1 items-center gap-2 rounded-md border px-2 py-1 focus-within:ring-1 focus-within:outline-hidden lg:gap-4'>
           {/* TODO: add feature for feedback */}
@@ -256,9 +255,9 @@ export function FeedbackConversation({ taskId }: { taskId: string }) {
         </Button>
       </form>
 
-      {!currentUser && (
+      {!taskFeedbacks.length && (
         <div className='text-muted-foreground mt-2 text-center text-sm'>
-          Please sign in to send feedback
+          Thảo luận về công việc ở đây ạ
         </div>
       )}
     </div>

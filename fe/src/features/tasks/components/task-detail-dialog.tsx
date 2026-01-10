@@ -171,12 +171,12 @@ export function TaskDetailDialog({
       {
         <DialogContent
           className={cn(
-            'flex h-dvh max-w-[900px] rounded-none px-0 pt-0 pb-0 md:h-2/3 md:rounded-md lg:max-h-[80dvh] lg:rounded'
+            'flex h-dvh max-w-[900px] rounded-none px-0 pt-0 pb-0 md:h-2/3 md:rounded-md lg:h-[80dvh] lg:w-[80vw] lg:max-w-[80vw] lg:rounded'
           )}
         >
-          <div className='grid h-full w-full grid-cols-[1fr_4.5rem]'>
+          <div className='grid h-full w-full grid-cols-[1fr_4.5rem] lg:grid-cols-[1fr]'>
             <div className='no-scrollbar flex h-full flex-col overflow-y-hidden'>
-              <DialogHeader className='sticky top-0 z-50 bg-white pt-3'>
+              <DialogHeader className='sticky top-0 z-40 bg-white pt-3'>
                 <DialogTitle className='flex flex-col gap-1 px-4 text-left text-lg'>
                   <div className='text-muted-foreground text-sm'>
                     Công việc:{' '}
@@ -206,13 +206,16 @@ export function TaskDetailDialog({
                 <Separator />
               </DialogHeader>
               {/* Content */}
-              <div className='flex min-h-0 grow'>
+              <div className='flex min-h-0 grow flex-col lg:flex-row lg:gap-4'>
                 <div
-                  className={cn('no-scrollbar hidden grow', {
-                    'overflow-y-hidden': contentTab === 'details',
-                    'overflow-y-auto': contentTab !== 'details',
-                    block: contentTab === 'details',
-                  })}
+                  className={cn(
+                    'no-scrollbar hidden grow pl-1 lg:block lg:flex-2 lg:pl-4',
+                    {
+                      'overflow-y-hidden': contentTab === 'details',
+                      'overflow-y-auto': contentTab !== 'details',
+                      block: contentTab === 'details',
+                    }
+                  )}
                 >
                   <div className='grid h-full grid-cols-1'>
                     {/* Left column - Task Details */}
@@ -275,7 +278,7 @@ export function TaskDetailDialog({
                         <Separator className='my-2' />
 
                         <div className='flex items-center justify-between gap-2'>
-                          <div className='text-sm font-medium'>Mô tả</div>
+                          <div className='text-sm font-medium'>Nội dung</div>
                           {isEditingDescription && (
                             <div className='flex gap-2'>
                               <Button
@@ -328,7 +331,7 @@ export function TaskDetailDialog({
                               />
                             ) : (
                               <p className='text-muted-foreground text-sm'>
-                                Chưa có mô tả
+                                Hãy nhấn vào đây để thêm nội dung.
                               </p>
                             )}
                           </div>
@@ -337,14 +340,16 @@ export function TaskDetailDialog({
                     </div>
                   </div>
                 </div>
-
                 <div
-                  className={cn('relative hidden h-full grow', {
-                    block: contentTab === 'conversation',
-                  })}
+                  className={cn(
+                    'hidden min-h-0 grow lg:block lg:flex-1 lg:border-l',
+                    {
+                      block: contentTab === 'conversation',
+                    }
+                  )}
                 >
                   {/* Right column - Feedback Conversation */}
-                  <div className='h-full'>
+                  <div className='relative h-full'>
                     <FeedbackConversation taskId={nonNullTask.id} />
                   </div>
                 </div>
@@ -353,7 +358,7 @@ export function TaskDetailDialog({
               </div>
             </div>
             {/* sidebar */}
-            <div className='flex flex-col gap-2 border-l px-2 pt-16'>
+            <div className='flex flex-col gap-2 border-l px-2 pt-16 lg:hidden'>
               <Button
                 onClick={() => {
                   setContentTab('details')
