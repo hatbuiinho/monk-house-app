@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -84,6 +86,44 @@ type mattermostNotFoundError struct {
 
 func (e mattermostNotFoundError) Error() string {
 	return e.Message
+}
+
+type mattermostRequestError struct {
+	Message string
+	Code    string
+}
+
+func (e mattermostRequestError) Error() string {
+	return e.Message
+}
+
+type sidebarCategoriesRequest struct {
+	TeamName  string            `json:"team_name"`
+	Categories map[string]string `json:"categories"`
+}
+
+type sidebarCategoriesResult struct {
+	UserID          string         `json:"user_id"`
+	NVCategoryID    string         `json:"nv_category_id,omitempty"`
+	BGCategoryID    string         `json:"bg_category_id,omitempty"`
+	AddedNV         int            `json:"added_nv"`
+	AddedBG         int            `json:"added_bg"`
+	CategoryIDs     map[string]string `json:"category_ids,omitempty"`
+	AddedByCategory map[string]int `json:"added_by_category,omitempty"`
+	Error           string         `json:"error,omitempty"`
+}
+
+type mattermostSidebarCategory struct {
+	ID          string   `json:"id"`
+	UserID      string   `json:"user_id"`
+	TeamID      string   `json:"team_id"`
+	DisplayName string   `json:"display_name"`
+	Type        string   `json:"type"`
+	SortOrder   int      `json:"sort_order"`
+	Sorting     string   `json:"sorting"`
+	Muted       bool     `json:"muted"`
+	Collapsed   bool     `json:"collapsed"`
+	ChannelIDs  []string `json:"channel_ids"`
 }
 
 func HandleMattermostImportUsers(c *core.RequestEvent) error {
@@ -370,6 +410,123 @@ func HandleMattermostCreateChannels(c *core.RequestEvent) error {
 	})
 }
 
+func HandleMattermostSidebarCategories(c *core.RequestEvent) error {
+
+	var requestBody sidebarCategoriesRequest
+	rawBody, _ := io.ReadAll(c.Request.Body)
+	_ = json.Unmarshal(rawBody, &requestBody)
+
+	categoriesMap := requestBody.Categories
+	if len(categoriesMap) == 0 {
+		var rawMap map[string]string
+		if err := json.Unmarshal(rawBody, &rawMap); err == nil && len(rawMap) > 0 {
+			delete(rawMap, "team_name")
+			categoriesMap = rawMap
+		}
+	}
+
+	teamName := strings.TrimSpace(requestBody.TeamName)
+	if teamName == "" {
+		teamName = strings.TrimSpace(c.Request.URL.Query().Get("team_name"))
+	}
+	if teamName == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "team_name is required"})
+	}
+	if len(categoriesMap) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "categories map is required"})
+	}
+
+	serverURL := strings.TrimRight(os.Getenv("MATTERMOST_SERVER_URL"), "/")
+	if serverURL == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "MATTERMOST_SERVER_URL is not set"})
+	}
+
+	token := os.Getenv("MATTERMOST_BOT_TOKEN")
+	if token == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "MATTERMOST_BOT_TOKEN is not set"})
+	}
+
+	client := &http.Client{Timeout: 20 * time.Second}
+
+	teamID, err := getMattermostTeamID(client, serverURL, token, teamName)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	userIDs, err := listMattermostTeamUserIDs(client, serverURL, token, teamID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	teamChannels, err := listMattermostTeamChannels(client, serverURL, token, teamID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	categoryChannelIDs := groupChannelIDsByPrefix(teamChannels, categoriesMap)
+	results := make([]sidebarCategoriesResult, 0, len(userIDs))
+	for _, userID := range userIDs {
+		result := sidebarCategoriesResult{
+			UserID:          userID,
+			CategoryIDs:     make(map[string]string),
+			AddedByCategory: make(map[string]int),
+		}
+
+		categories, err := listMattermostSidebarCategories(client, serverURL, token, userID, teamID)
+		if err != nil {
+			result.Error = err.Error()
+			results = append(results, result)
+			continue
+		}
+
+		categoryIndex := buildSidebarCategoryIndex(categories)
+		for _, prefix := range sortedPrefixKeys(categoriesMap) {
+			displayName := categoriesMap[prefix]
+			channelIDs := categoryChannelIDs[displayName]
+			if displayName == "" {
+				continue
+			}
+
+			category := categoryIndex[strings.ToLower(displayName)]
+			if category == nil {
+				category, err = createMattermostSidebarCategory(client, serverURL, token, userID, teamID, displayName, channelIDs)
+				if err != nil {
+					result.Error = err.Error()
+					results = append(results, result)
+					category = nil
+					break
+				}
+				categories = append(categories, *category)
+				categoryIndex[strings.ToLower(displayName)] = category
+			}
+
+			added, updated, err := updateSidebarCategoryChannelsIfNeeded(client, serverURL, token, userID, teamID, categories, category.ID, channelIDs)
+			if err != nil {
+				result.Error = err.Error()
+				results = append(results, result)
+				category = nil
+				break
+			}
+			categories = updated
+			result.CategoryIDs[displayName] = category.ID
+			result.AddedByCategory[displayName] = added
+		}
+
+		if result.Error != "" {
+			continue
+		}
+
+		results = append(results, result)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"success": true,
+		"team_id": teamID,
+		"total":   len(results),
+		"results": results,
+	})
+}
+
 func getMattermostTeamID(client *http.Client, serverURL, token, teamName string) (string, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -465,6 +622,366 @@ func listMattermostTeamUserIDs(client *http.Client, serverURL, token, teamID str
 	}
 
 	return userIDs, nil
+}
+
+func listMattermostTeamChannels(client *http.Client, serverURL, token, teamID string) ([]mattermostChannelResponse, error) {
+	perPage := 200
+	page := 0
+	channels := make([]mattermostChannelResponse, 0, perPage)
+
+	for {
+		req, err := http.NewRequest(
+			http.MethodGet,
+			fmt.Sprintf("%s/api/v4/teams/%s/channels?per_page=%d&page=%d", serverURL, teamID, perPage, page),
+			nil,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build team channels request")
+		}
+
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("team channels request failed")
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			var errorResp mattermostErrorResponse
+			if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Message != "" {
+				return nil, fmt.Errorf("team channels request failed: %s", errorResp.Message)
+			}
+			return nil, fmt.Errorf("team channels request failed with status %d", resp.StatusCode)
+		}
+
+		var pageChannels []mattermostChannelResponse
+		if err := json.NewDecoder(resp.Body).Decode(&pageChannels); err != nil {
+			return nil, fmt.Errorf("failed to parse team channels response")
+		}
+
+		if len(pageChannels) == 0 {
+			break
+		}
+
+		channels = append(channels, pageChannels...)
+		if len(pageChannels) < perPage {
+			break
+		}
+		page++
+	}
+	return channels, nil
+}
+
+func groupChannelIDsByPrefix(channels []mattermostChannelResponse, categoriesMap map[string]string) map[string][]string {
+	grouped := make(map[string][]string, len(categoriesMap))
+	prefixes := sortedPrefixKeys(categoriesMap)
+
+	for _, channel := range channels {
+		if channel.ID == "" {
+			continue
+		}
+		displayName := strings.TrimSpace(channel.DisplayName)
+		for _, prefix := range prefixes {
+			if prefixMatchesDisplayName(displayName, prefix) {
+				categoryName := categoriesMap[prefix]
+				if categoryName == "" {
+					break
+				}
+				grouped[categoryName] = append(grouped[categoryName], channel.ID)
+				break
+			}
+		}
+	}
+
+	return grouped
+}
+
+func listMattermostSidebarCategories(client *http.Client, serverURL, token, userID, teamID string) ([]mattermostSidebarCategory, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/v4/users/%s/teams/%s/channels/categories", serverURL, userID, teamID),
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build sidebar categories request")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sidebar categories request failed")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResp mattermostErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Message != "" {
+			return nil, fmt.Errorf("sidebar categories request failed: %s", errorResp.Message)
+		}
+		return nil, fmt.Errorf("sidebar categories request failed with status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sidebar categories response")
+	}
+
+	var categories []mattermostSidebarCategory
+	if err := json.Unmarshal(body, &categories); err == nil {
+		return categories, nil
+	}
+
+	var wrapper struct {
+		Categories []mattermostSidebarCategory `json:"categories"`
+	}
+	if err := json.Unmarshal(body, &wrapper); err == nil && wrapper.Categories != nil {
+		return wrapper.Categories, nil
+	}
+
+	return nil, fmt.Errorf("failed to parse sidebar categories response")
+}
+
+func buildSidebarCategoryIndex(categories []mattermostSidebarCategory) map[string]*mattermostSidebarCategory {
+	index := make(map[string]*mattermostSidebarCategory, len(categories))
+	for i := range categories {
+		category := &categories[i]
+		if strings.TrimSpace(category.DisplayName) == "" {
+			continue
+		}
+		index[strings.ToLower(category.DisplayName)] = category
+	}
+	return index
+}
+
+func createMattermostSidebarCategory(client *http.Client, serverURL, token, userID, teamID, displayName string, channelIDs []string) (*mattermostSidebarCategory, error) {
+	category := map[string]any{
+		"user_id":      userID,
+		"team_id":      teamID,
+		"display_name": displayName,
+		"type":         "custom",
+	}
+
+	var lastErr error
+	created, err := createMattermostSidebarCategoryWithPayload(client, serverURL, token, userID, teamID, category)
+	if err == nil {
+		return created, nil
+	}
+	lastErr = err
+	if !isMattermostInvalidCategoryError(err) {
+		return nil, err
+	}
+
+	return nil, lastErr
+}
+
+func createMattermostSidebarCategoryWithPayload(client *http.Client, serverURL, token, userID, teamID string, payload map[string]any) (*mattermostSidebarCategory, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal sidebar category request")
+	}
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/api/v4/users/%s/teams/%s/channels/categories", serverURL, userID, teamID),
+		bytes.NewBuffer(body),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to build sidebar category request")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("sidebar category request failed")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResp mattermostErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Message != "" {
+			return nil, mattermostRequestError{
+				Message: fmt.Sprintf("sidebar category request failed: %s", errorResp.Message),
+				Code:    errorResp.ID,
+			}
+		}
+		return nil, fmt.Errorf("sidebar category request failed with status %d", resp.StatusCode)
+	}
+
+	var category mattermostSidebarCategory
+	if err := json.NewDecoder(resp.Body).Decode(&category); err != nil {
+		return nil, fmt.Errorf("failed to parse sidebar category response")
+	}
+
+	if category.ID == "" {
+		return nil, fmt.Errorf("missing sidebar category id in response")
+	}
+
+	return &category, nil
+}
+
+func updateSidebarCategoryChannelsIfNeeded(client *http.Client, serverURL, token, userID, teamID string, categories []mattermostSidebarCategory, categoryID string, channelIDs []string) (int, []mattermostSidebarCategory, error) {
+	if len(channelIDs) == 0 {
+		return 0, categories, nil
+	}
+
+	index := -1
+	defaultIndex := -1
+	for i := range categories {
+		if categories[i].ID == categoryID {
+			index = i
+		}
+		if categories[i].Type == "channels" || strings.EqualFold(categories[i].DisplayName, "Channels") {
+			defaultIndex = i
+		}
+		if index != -1 && defaultIndex != -1 {
+			break
+		}
+	}
+	if index == -1 {
+		return 0, categories, nil
+	}
+
+	mergedChannelIDs, added := mergeChannelIDs(categories[index].ChannelIDs, channelIDs)
+	if added == 0 {
+		return 0, categories, nil
+	}
+
+	categories[index].ChannelIDs = mergedChannelIDs
+	for i := range categories {
+		if i == index {
+			continue
+		}
+		categories[i].ChannelIDs = removeChannelIDs(categories[i].ChannelIDs, channelIDs)
+	}
+
+	body, err := json.Marshal(categories)
+	if err != nil {
+		return 0, categories, fmt.Errorf("failed to marshal sidebar category update")
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPut,
+		fmt.Sprintf("%s/api/v4/users/%s/teams/%s/channels/categories", serverURL, userID, teamID),
+		bytes.NewBuffer(body),
+	)
+	if err != nil {
+		return 0, categories, fmt.Errorf("failed to build sidebar category update")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, categories, fmt.Errorf("sidebar category update failed")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResp mattermostErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Message != "" {
+			return 0, categories, fmt.Errorf("sidebar category update failed: %s", errorResp.Message)
+		}
+		return 0, categories, fmt.Errorf("sidebar category update failed with status %d", resp.StatusCode)
+	}
+
+	return added, categories, nil
+}
+
+func mergeChannelIDs(existing, incoming []string) ([]string, int) {
+	seen := make(map[string]bool, len(existing)+len(incoming))
+	merged := make([]string, 0, len(existing)+len(incoming))
+
+	for _, id := range existing {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		merged = append(merged, id)
+	}
+
+	added := 0
+	for _, id := range incoming {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		merged = append(merged, id)
+		added++
+	}
+
+	return merged, added
+}
+
+func removeChannelIDs(existing, remove []string) []string {
+	if len(existing) == 0 || len(remove) == 0 {
+		return existing
+	}
+	removeSet := make(map[string]bool, len(remove))
+	for _, id := range remove {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		removeSet[id] = true
+	}
+
+	kept := make([]string, 0, len(existing))
+	for _, id := range existing {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		if removeSet[id] {
+			continue
+		}
+		kept = append(kept, id)
+	}
+
+	return kept
+}
+
+func sortedPrefixKeys(categoriesMap map[string]string) []string {
+	prefixes := make([]string, 0, len(categoriesMap))
+	for prefix := range categoriesMap {
+		trimmed := strings.TrimSpace(prefix)
+		if trimmed == "" {
+			continue
+		}
+		prefixes = append(prefixes, trimmed)
+	}
+	sort.Slice(prefixes, func(i, j int) bool {
+		if len(prefixes[i]) == len(prefixes[j]) {
+			return prefixes[i] < prefixes[j]
+		}
+		return len(prefixes[i]) > len(prefixes[j])
+	})
+	return prefixes
+}
+
+func prefixMatchesDisplayName(displayName, prefix string) bool {
+	if displayName == "" || prefix == "" {
+		return false
+	}
+	trimmedName := strings.TrimSpace(displayName)
+	upperName := strings.ToUpper(trimmedName)
+	upperPrefix := strings.ToUpper(strings.TrimSpace(prefix))
+	if !strings.HasPrefix(upperName, upperPrefix) {
+		return false
+	}
+	if len(upperName) == len(upperPrefix) {
+		return true
+	}
+	nextChar := upperName[len(upperPrefix)]
+	return nextChar == ' ' || nextChar == '.' || nextChar == '-' || nextChar == '_' || (nextChar >= '0' && nextChar <= '9')
 }
 
 func createOrGetMattermostChannel(client *http.Client, serverURL, token, teamID, channelName, displayName string) (string, error) {
@@ -663,6 +1180,15 @@ func isMattermostChannelExistsError(errorResp mattermostErrorResponse) bool {
 func isMattermostNotFoundError(err error) bool {
 	_, ok := err.(mattermostNotFoundError)
 	return ok
+}
+
+func isMattermostInvalidCategoryError(err error) bool {
+	requestErr, ok := err.(mattermostRequestError)
+	if !ok {
+		return false
+	}
+	message := strings.ToLower(requestErr.Message)
+	return strings.Contains(message, "invalid or missing category")
 }
 
 func isMattermostMemberExistsError(errorResp mattermostErrorResponse) bool {

@@ -173,6 +173,11 @@ func main() {
 		})
 		// .Bind(apis.RequireAuth())
 
+		e.Router.POST("/api/mattermost/sidebar-categories", func(c *core.RequestEvent) error {
+			return mattermost.HandleMattermostSidebarCategories(c)
+		})
+		// .Bind(apis.RequireAuth())
+
 		// Health check
 		e.Router.GET("/health", func(c *core.RequestEvent) error {
 			return c.JSON(200, map[string]string{"status": "ok"})
