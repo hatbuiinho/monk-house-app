@@ -178,6 +178,11 @@ func main() {
 		})
 		// .Bind(apis.RequireAuth())
 
+		e.Router.POST("/api/mattermost/clear-empty-categories", func(c *core.RequestEvent) error {
+			return mattermost.HandleMattermostClearEmptySidebarCategories(c)
+		})
+		// .Bind(apis.RequireAuth())
+
 		// Health check
 		e.Router.GET("/health", func(c *core.RequestEvent) error {
 			return c.JSON(200, map[string]string{"status": "ok"})

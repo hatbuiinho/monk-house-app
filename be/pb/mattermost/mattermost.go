@@ -113,6 +113,12 @@ type sidebarCategoriesResult struct {
 	Error           string         `json:"error,omitempty"`
 }
 
+type clearEmptyCategoriesResult struct {
+	UserID  string   `json:"user_id"`
+	Deleted []string `json:"deleted"`
+	Error   string   `json:"error,omitempty"`
+}
+
 type mattermostSidebarCategory struct {
 	ID          string   `json:"id"`
 	UserID      string   `json:"user_id"`
@@ -527,6 +533,84 @@ func HandleMattermostSidebarCategories(c *core.RequestEvent) error {
 	})
 }
 
+func HandleMattermostClearEmptySidebarCategories(c *core.RequestEvent) error {
+	var requestBody sidebarCategoriesRequest
+	if err := c.BindBody(&requestBody); err != nil && c.Request.Body != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	}
+
+	teamName := strings.TrimSpace(requestBody.TeamName)
+	if teamName == "" {
+		teamName = strings.TrimSpace(c.Request.URL.Query().Get("team_name"))
+	}
+	if teamName == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "team_name is required"})
+	}
+
+	serverURL := strings.TrimRight(os.Getenv("MATTERMOST_SERVER_URL"), "/")
+	if serverURL == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "MATTERMOST_SERVER_URL is not set"})
+	}
+
+	token := os.Getenv("MATTERMOST_BOT_TOKEN")
+	if token == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "MATTERMOST_BOT_TOKEN is not set"})
+	}
+
+	client := &http.Client{Timeout: 20 * time.Second}
+
+	teamID, err := getMattermostTeamID(client, serverURL, token, teamName)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	userIDs, err := listMattermostTeamUserIDs(client, serverURL, token, teamID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	results := make([]clearEmptyCategoriesResult, 0, len(userIDs))
+	for _, userID := range userIDs {
+		result := clearEmptyCategoriesResult{
+			UserID:  userID,
+			Deleted: []string{},
+		}
+
+		categories, err := listMattermostSidebarCategories(client, serverURL, token, userID, teamID)
+		if err != nil {
+			result.Error = err.Error()
+			results = append(results, result)
+			continue
+		}
+
+		for _, category := range categories {
+			if category.Type != "custom" {
+				continue
+			}
+			if len(category.ChannelIDs) > 0 {
+				continue
+			}
+			if category.ID == "" {
+				continue
+			}
+			if err := deleteMattermostSidebarCategory(client, serverURL, token, userID, teamID, category.ID); err != nil {
+				result.Error = err.Error()
+				break
+			}
+			result.Deleted = append(result.Deleted, category.ID)
+		}
+
+		results = append(results, result)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"success": true,
+		"team_id": teamID,
+		"total":   len(results),
+		"results": results,
+	})
+}
+
 func getMattermostTeamID(client *http.Client, serverURL, token, teamName string) (string, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -821,6 +905,39 @@ func createMattermostSidebarCategoryWithPayload(client *http.Client, serverURL, 
 	}
 
 	return &category, nil
+}
+
+func deleteMattermostSidebarCategory(client *http.Client, serverURL, token, userID, teamID, categoryID string) error {
+	req, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/api/v4/users/%s/teams/%s/channels/categories/%s", serverURL, userID, teamID, categoryID),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to build sidebar category delete")
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("sidebar category delete failed")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
+	var errorResp mattermostErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Message != "" {
+		return fmt.Errorf("sidebar category delete failed: %s", errorResp.Message)
+	}
+	return fmt.Errorf("sidebar category delete failed with status %d", resp.StatusCode)
 }
 
 func updateSidebarCategoryChannelsIfNeeded(client *http.Client, serverURL, token, userID, teamID string, categories []mattermostSidebarCategory, categoryID string, channelIDs []string) (int, []mattermostSidebarCategory, error) {
