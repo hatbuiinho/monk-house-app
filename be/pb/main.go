@@ -20,6 +20,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
 
+	"be.monk.house/mattermost"
 	"be.monk.house/notification"
 	"be.monk.house/xlsx"
 )
@@ -159,6 +160,11 @@ func main() {
 		// Mattermost API route - Post message to Mattermost channel
 		e.Router.POST("/api/mattermost/post", func(c *core.RequestEvent) error {
 			return notification.HandleMattermostPost(c)
+		})
+		// .Bind(apis.RequireAuth())
+
+		e.Router.POST("/api/mattermost/import-users", func(c *core.RequestEvent) error {
+			return mattermost.HandleMattermostImportUsers(c)
 		})
 		// .Bind(apis.RequireAuth())
 
