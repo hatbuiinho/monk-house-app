@@ -98,19 +98,19 @@ func (e mattermostRequestError) Error() string {
 }
 
 type sidebarCategoriesRequest struct {
-	TeamName  string            `json:"team_name"`
+	TeamName   string            `json:"team_name"`
 	Categories map[string]string `json:"categories"`
 }
 
 type sidebarCategoriesResult struct {
-	UserID          string         `json:"user_id"`
-	NVCategoryID    string         `json:"nv_category_id,omitempty"`
-	BGCategoryID    string         `json:"bg_category_id,omitempty"`
-	AddedNV         int            `json:"added_nv"`
-	AddedBG         int            `json:"added_bg"`
+	UserID          string            `json:"user_id"`
+	NVCategoryID    string            `json:"nv_category_id,omitempty"`
+	BGCategoryID    string            `json:"bg_category_id,omitempty"`
+	AddedNV         int               `json:"added_nv"`
+	AddedBG         int               `json:"added_bg"`
 	CategoryIDs     map[string]string `json:"category_ids,omitempty"`
-	AddedByCategory map[string]int `json:"added_by_category,omitempty"`
-	Error           string         `json:"error,omitempty"`
+	AddedByCategory map[string]int    `json:"added_by_category,omitempty"`
+	Error           string            `json:"error,omitempty"`
 }
 
 type clearEmptyCategoriesResult struct {
@@ -657,7 +657,7 @@ func listMattermostTeamUserIDs(client *http.Client, serverURL, token, teamID str
 	for {
 		req, err := http.NewRequest(
 			http.MethodGet,
-			fmt.Sprintf("%s/api/v4/teams/%s/members?per_page=%d&page=%d", serverURL, teamID, perPage, page),
+			fmt.Sprintf("%s/api/v4/teams/%s/members?per_page=%d&page=%d&exclude_deleted_users=true", serverURL, teamID, perPage, page),
 			nil,
 		)
 		if err != nil {
@@ -1428,7 +1428,7 @@ func addMembersToMattermostChannelIndividually(client *http.Client, serverURL, t
 			if isMattermostMemberExistsError(errorResp) {
 				continue
 			}
-			return fmt.Errorf("channel member request failed: %s", errorResp.Message)
+			return fmt.Errorf("channel member request failed: %s, user id: %s", errorResp.Message, payload)
 		}
 		return fmt.Errorf("channel member request failed with status %d, channel id: %s", resp.StatusCode, channelID)
 	}
