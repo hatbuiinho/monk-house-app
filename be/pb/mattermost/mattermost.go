@@ -765,9 +765,9 @@ func groupChannelIDsByPrefix(channels []mattermostChannelResponse, categoriesMap
 		if channel.ID == "" {
 			continue
 		}
-		displayName := strings.TrimSpace(channel.DisplayName)
+		name := strings.TrimSpace(channel.Name)
 		for _, prefix := range prefixes {
-			if prefixMatchesDisplayName(displayName, prefix) {
+			if prefixMatchesDisplayName(name, prefix) {
 				categoryName := categoriesMap[prefix]
 				if categoryName == "" {
 					break
