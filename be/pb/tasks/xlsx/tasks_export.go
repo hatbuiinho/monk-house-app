@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/xuri/excelize/v2"
 	nethtml "golang.org/x/net/html"
@@ -30,6 +31,12 @@ var (
 	labelsCfg  exportLabels
 	labelsErr  error
 )
+
+func RegisterRoute(e *core.ServeEvent, app *pocketbase.PocketBase) {
+	e.Router.GET("/api/export/tasks", func(c *core.RequestEvent) error {
+		return HandleTaskExport(app, c)
+	}).Bind(apis.RequireAuth())
+}
 
 func HandleTaskExport(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	filter := strings.TrimSpace(c.Request.URL.Query().Get("filter"))

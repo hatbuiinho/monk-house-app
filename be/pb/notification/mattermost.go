@@ -49,6 +49,14 @@ type MattermostError struct {
 	IsOAuth     bool   `json:"is_oauth"`
 }
 
+func RegisterRoute(e *core.ServeEvent) {
+	// Mattermost API route - Post message to Mattermost channel
+	e.Router.POST("/api/mattermost/post", func(c *core.RequestEvent) error {
+		return HandleMattermostPost(c)
+	})
+	// .Bind(apis.RequireAuth())
+}
+
 // PostMessageToMattermost sends a message to one or more Mattermost channels with optional user mentions
 // Parameters:
 //   - channelIDs: IDs of the channels to post to

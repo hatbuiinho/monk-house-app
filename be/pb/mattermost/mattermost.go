@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/xuri/excelize/v2"
 )
@@ -130,6 +132,50 @@ type mattermostSidebarCategory struct {
 	Muted       bool     `json:"muted"`
 	Collapsed   bool     `json:"collapsed"`
 	ChannelIDs  []string `json:"channel_ids"`
+}
+
+func RegisterRoute(e *core.ServeEvent, app *pocketbase.PocketBase) error {
+	log.Println("PocketBase server starting with Mattermost OAuth2 integration...")
+
+	// OAuth2 Login Route - Redirect to Mattermost
+	e.Router.GET("/api/auth/mattermost/login", func(c *core.RequestEvent) error {
+		return handleMattermostLogin(c, app)
+	})
+
+	// OAuth2 Callback Route - Handle Mattermost response
+	e.Router.GET("/api/auth/mattermost/callback", func(c *core.RequestEvent) error {
+		return handleMattermostCallback(c, app)
+	})
+
+	e.Router.POST("/api/auth/exchange", func(c *core.RequestEvent) error {
+		return handleOAuthExchange(c, app)
+	})
+
+	e.Router.GET("/api/mattermost/avatar/{id}", func(c *core.RequestEvent) error {
+		return handleMattermostAvatar(c)
+	})
+
+	e.Router.POST("/api/mattermost/import-users", func(c *core.RequestEvent) error {
+		return HandleMattermostImportUsers(c)
+	})
+	// .Bind(apis.RequireAuth())
+
+	e.Router.POST("/api/mattermost/create-channels", func(c *core.RequestEvent) error {
+		return HandleMattermostCreateChannels(c)
+	})
+	// .Bind(apis.RequireAuth())
+
+	e.Router.POST("/api/mattermost/sidebar-categories", func(c *core.RequestEvent) error {
+		return HandleMattermostSidebarCategories(c)
+	})
+	// .Bind(apis.RequireAuth())
+
+	e.Router.POST("/api/mattermost/clear-empty-categories", func(c *core.RequestEvent) error {
+		return HandleMattermostClearEmptySidebarCategories(c)
+	})
+	// .Bind(apis.RequireAuth())
+
+	return e.Next()
 }
 
 func HandleMattermostImportUsers(c *core.RequestEvent) error {
@@ -765,16 +811,31 @@ func groupChannelIDsByPrefix(channels []mattermostChannelResponse, categoriesMap
 		if channel.ID == "" {
 			continue
 		}
-		name := strings.TrimSpace(channel.Name)
+
+		candidateNames := []string{
+			strings.TrimSpace(channel.DisplayName),
+			strings.TrimSpace(channel.Name),
+		}
+
 		for _, prefix := range prefixes {
-			if prefixMatchesDisplayName(name, prefix) {
-				categoryName := categoriesMap[prefix]
-				if categoryName == "" {
-					break
+			matched := false
+			for _, candidateName := range candidateNames {
+				if !prefixMatchesDisplayName(candidateName, prefix) {
+					continue
 				}
-				grouped[categoryName] = append(grouped[categoryName], channel.ID)
+				matched = true
 				break
 			}
+			if !matched {
+				continue
+			}
+
+			categoryName := categoriesMap[prefix]
+			if categoryName == "" {
+				break
+			}
+			grouped[categoryName] = append(grouped[categoryName], channel.ID)
+			break
 		}
 	}
 
