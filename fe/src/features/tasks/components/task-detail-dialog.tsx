@@ -324,7 +324,7 @@ export function TaskDetailDialog({
                           >
                             {nonNullTask.description ? (
                               <div
-                                className='prose prose-sm max-w-none'
+                                className='tiptap ProseMirror simple-editor'
                                 dangerouslySetInnerHTML={{
                                   __html: nonNullTask.description,
                                 }}
