@@ -28,3 +28,4 @@ dist-ssr
 #pocketbase
 pb_data/
 **/pocketbase
+.gocache
