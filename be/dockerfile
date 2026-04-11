@@ -18,7 +18,7 @@ WORKDIR /src
 RUN apk add --no-cache libstdc++
 
 COPY --from=builder /out/pocketbase ./pocketbase
-COPY --from=builder /src/xlsx ./xlsx
+COPY --from=builder /src/tasks ./tasks
 
 EXPOSE 8090
 

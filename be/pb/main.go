@@ -12,7 +12,7 @@ import (
 
 	"be.monk.house/mattermost"
 	"be.monk.house/notification"
-	"be.monk.house/xlsx"
+	"be.monk.house/tasks/xlsx"
 )
 
 func main() {
