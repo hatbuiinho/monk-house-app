@@ -1,9 +1,13 @@
 services:
   pocketbase:
-    build: .
+    build:
+      context: .
+      dockerfile: dockerfile
     container_name: monk_house
+    env_file:
+      - ./pb/.env
     volumes:
-      - ./pb:/app
+      - ./pb/pb_data:/src/pb_data
     ports:
       - "8090:8090"
     restart: unless-stopped
